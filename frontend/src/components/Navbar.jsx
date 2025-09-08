@@ -14,13 +14,13 @@ export default function Navbar() {
 
   return (
     <nav className="fixed top-0 inset-x-0 z-50 h-14 flex items-center
-                    bg-vs-surface/95 backdrop-blur border-b border-vs-border">
+                    bg-slate-900/70 backdrop-blur-xl border-b border-slate-800/80">
       <div className="w-full max-w-screen-xl mx-auto px-4 flex items-center justify-between">
 
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2 group">
-          <div className="w-8 h-8 rounded bg-vs-blue flex items-center justify-center
-                          shadow-blue-glow group-hover:scale-105 transition-transform">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-sky-600 to-indigo-500 flex items-center justify-center
+                          shadow-[0_2px_8px_rgba(0,0,0,0.5)] group-hover:scale-105 transition-transform">
             <span className="text-white font-bold text-xs font-mono">CV</span>
           </div>
           <span className="font-bold text-lg font-mono text-white">
@@ -35,11 +35,7 @@ export default function Navbar() {
             return (
               <Link key={path} to={path}>
                 <motion.span
-                  className={`inline-block px-3 py-1.5 rounded text-sm font-medium transition-colors duration-150
-                    ${active
-                      ? 'bg-vs-blue text-white'
-                      : 'text-vs-text hover:text-white hover:bg-vs-border'
-                    }`}
+                  className={`nav-link ${active ? 'nav-link-active' : ''}`}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >

@@ -224,16 +224,16 @@ export default function VisualizerPage() {
       <div className="flex flex-col flex-1 pt-14 min-h-0">
 
         {/* ── Top toolbar: examples ── */}
-        <div className="bg-vs-surface border-b border-vs-border px-3 py-2
-                        flex items-center gap-2 flex-wrap shrink-0">
+        <div className="px-4 pt-3 pb-2 shrink-0">
+          <div className="glass-soft flex items-center gap-2 flex-wrap px-3 py-2 border border-slate-700/70">
           <span className="text-xs text-gray-500 font-mono mr-1">⚡ Quick Examples:</span>
           {Object.keys(EXAMPLES).map(name => (
             <motion.button
               key={name}
               onClick={() => loadExample(name)}
               disabled={isLoading}
-              className="px-2.5 py-1 text-xs bg-vs-bg border border-vs-border
-                         hover:border-vs-blue text-gray-400 hover:text-white rounded
+              className="px-2.5 py-1 text-xs bg-slate-900/80 border border-slate-700
+                         hover:border-vs-blue text-gray-300 hover:text-white rounded-full
                          transition-colors disabled:opacity-40"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -242,45 +242,52 @@ export default function VisualizerPage() {
             </motion.button>
           ))}
 
-          {stale && (
-            <motion.span
-              className="ml-2 text-xs text-vs-yellow font-mono"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-            >
-              ⚠ Code changed — click Run to re-execute
-            </motion.span>
-          )}
+            {stale && (
+              <motion.span
+                className="ml-2 text-xs text-vs-yellow font-mono"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+              >
+                ⚠ Code changed — click Run to re-execute
+              </motion.span>
+            )}
+          </div>
         </div>
 
         {/* ── Main 3-column workspace ── */}
-        <div className="flex flex-1 min-h-0">
+        <div className="flex flex-1 min-h-0 gap-3 px-4 pb-3">
 
           {/* LEFT: Code Editor */}
-          <div className="w-1/3 border-r border-vs-border flex flex-col min-h-0">
-            <CodeEditor code={code} onChange={handleCodeChange} />
+          <div className="w-1/3 flex flex-col min-h-0">
+            <div className="glass-panel flex-1 min-h-0 overflow-hidden">
+              <CodeEditor code={code} onChange={handleCodeChange} />
+            </div>
           </div>
 
           {/* CENTER: Execution Panel */}
-          <div className="w-1/3 border-r border-vs-border flex flex-col min-h-0">
-            <ExecutionPanel
-              code={code}
-              steps={steps}
-              currentStepIndex={Math.max(0, currentStepIndex)}
-            />
+          <div className="w-1/3 flex flex-col min-h-0">
+            <div className="glass-panel flex-1 min-h-0 overflow-hidden">
+              <ExecutionPanel
+                code={code}
+                steps={steps}
+                currentStepIndex={Math.max(0, currentStepIndex)}
+              />
+            </div>
           </div>
 
           {/* RIGHT: Memory View */}
           <div className="w-1/3 flex flex-col min-h-0">
-            <MemoryView memory={currentMemory} prevMemory={prevMemory} />
+            <div className="glass-panel flex-1 min-h-0 overflow-hidden">
+              <MemoryView memory={currentMemory} prevMemory={prevMemory} />
+            </div>
           </div>
         </div>
 
         {/* ── Bottom bar: console + controls ── */}
-        <div className="shrink-0 border-t border-vs-border">
+        <div className="shrink-0 px-4 pb-4 space-y-2">
 
           {/* Console */}
-          <div className="bg-vs-bg border-b border-vs-border">
+          <div className="glass-soft">
             <div className="panel-header">
               <span>Console Output</span>
               {error  && <span className="text-red-400 text-xs">● Error</span>}

@@ -26,10 +26,10 @@ function valueColor(v) {
 /* ─── MemoryBox ────────────────────────────────────────────── */
 function MemoryBox({ name, value, isNew, isChanged }) {
   const borderClass = isNew
-    ? 'border-vs-green shadow-green-glow'
+    ? 'border-emerald-500/60 shadow-[0_2px_12px_rgba(0,0,0,0.5)]'
     : isChanged
-    ? 'border-vs-blue shadow-blue-glow'
-    : 'border-vs-border'
+    ? 'border-sky-500/60 shadow-[0_2px_12px_rgba(0,0,0,0.5)]'
+    : 'border-slate-700/80'
 
   const badge = isNew ? (
     <span className="text-[10px] font-bold text-vs-green bg-vs-green/10
@@ -50,20 +50,25 @@ function MemoryBox({ name, value, isNew, isChanged }) {
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.75, y: 10 }}
       transition={{ type: 'spring', stiffness: 320, damping: 28 }}
-      className={`bg-vs-bg border ${borderClass} rounded-xl p-3 mb-2.5`}
+      className={`bg-slate-900/80 border ${borderClass} rounded-2xl p-3.5 mb-2.5 backdrop-blur-xl`}
     >
-      {/* Top row: badge + type */}
+      {/* Top row: badge + type + slot */}
       <div className="flex items-center justify-between mb-2">
         <div>{badge}</div>
-        <span className="text-[10px] text-gray-500 font-mono bg-vs-surface
-                         px-2 py-0.5 rounded-full">
-          {typeLabel(value)}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] text-purple-300/80 font-mono bg-purple-500/20 border border-purple-400/40 px-2 py-0.5 rounded-full">
+            slot
+          </span>
+          <span className="text-[10px] text-gray-400 font-mono bg-slate-800/90
+                           px-2 py-0.5 rounded-full border border-slate-700/80">
+            {typeLabel(value)}
+          </span>
+        </div>
       </div>
 
       {/* Main row: name ← value */}
       <div className="flex items-center justify-between gap-4">
-        <span className="text-vs-yellow font-mono font-semibold text-base">
+        <span className="text-vs-blue font-mono font-semibold text-sm tracking-wide">
           {name}
         </span>
         <motion.span
