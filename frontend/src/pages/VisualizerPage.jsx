@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import axios from 'axios'
+import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels'
 
 import Navbar         from '../components/Navbar'
 import CodeEditor, { DEFAULT_CODE } from '../components/CodeEditor'
@@ -254,33 +255,40 @@ export default function VisualizerPage() {
           </div>
         </div>
 
-        {/* ── Main 3-column workspace ── */}
-        <div className="flex flex-1 min-h-0 gap-3 px-4 pb-3">
+        {/* ── Main 3-column resizable workspace ── */}
+        <div className="flex-1 min-h-0 px-4 pb-3">
+          <PanelGroup direction="horizontal" className="h-full gap-0">
 
-          {/* LEFT: Code Editor */}
-          <div className="w-1/3 flex flex-col min-h-0">
-            <div className="glass-panel flex-1 min-h-0 overflow-hidden">
-              <CodeEditor code={code} onChange={handleCodeChange} />
-            </div>
-          </div>
+            {/* LEFT: Code Editor */}
+            <Panel defaultSize={33} minSize={18} className="flex flex-col min-h-0">
+              <div className="glass-panel h-full overflow-hidden">
+                <CodeEditor code={code} onChange={handleCodeChange} />
+              </div>
+            </Panel>
 
-          {/* CENTER: Execution Panel */}
-          <div className="w-1/3 flex flex-col min-h-0">
-            <div className="glass-panel flex-1 min-h-0 overflow-hidden">
-              <ExecutionPanel
-                code={code}
-                steps={steps}
-                currentStepIndex={Math.max(0, currentStepIndex)}
-              />
-            </div>
-          </div>
+            <PanelResizeHandle className="resize-handle-x" />
 
-          {/* RIGHT: Memory View */}
-          <div className="w-1/3 flex flex-col min-h-0">
-            <div className="glass-panel flex-1 min-h-0 overflow-hidden">
-              <MemoryView memory={currentMemory} prevMemory={prevMemory} />
-            </div>
-          </div>
+            {/* CENTER: Execution Panel */}
+            <Panel defaultSize={34} minSize={18} className="flex flex-col min-h-0">
+              <div className="glass-panel h-full overflow-hidden">
+                <ExecutionPanel
+                  code={code}
+                  steps={steps}
+                  currentStepIndex={Math.max(0, currentStepIndex)}
+                />
+              </div>
+            </Panel>
+
+            <PanelResizeHandle className="resize-handle-x" />
+
+            {/* RIGHT: Memory View */}
+            <Panel defaultSize={33} minSize={18} className="flex flex-col min-h-0">
+              <div className="glass-panel h-full overflow-hidden">
+                <MemoryView memory={currentMemory} prevMemory={prevMemory} />
+              </div>
+            </Panel>
+
+          </PanelGroup>
         </div>
 
         {/* ── Bottom bar: console + controls ── */}

@@ -111,6 +111,32 @@ input[type="range"] { accent-color: #38bdf8; }
   @apply opacity-40 cursor-not-allowed;
 }
 
+/* ── Resize handles (react-resizable-panels) ── */
+.resize-handle-x {
+  width: 8px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: col-resize;
+  position: relative;
+  z-index: 10;
+}
+.resize-handle-x::after {
+  content: '';
+  display: block;
+  width: 2px;
+  height: 40px;
+  border-radius: 9999px;
+  background: rgba(148, 163, 184, 0.2);
+  transition: background 0.15s ease, height 0.15s ease;
+}
+.resize-handle-x:hover::after,
+.resize-handle-x[data-resize-handle-active]::after {
+  background: rgba(148, 163, 184, 0.55);
+  height: 64px;
+}
+
 /* ── Navigation links ── */
 .nav-link {
   position: relative;
