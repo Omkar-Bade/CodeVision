@@ -1,8 +1,26 @@
+/*
+ * index.css — Global styles for CodeVision
+ *
+ * Structure:
+ *   1. Tailwind directives
+ *   2. Base reset & typography
+ *   3. Custom scrollbar
+ *   4. Utility classes  (font-mono, line highlight)
+ *   5. Tab bar
+ *   6. Glassmorphism panels  (.glass-panel, .glass-soft)
+ *   7. Control buttons  (.neon-btn-*)
+ *   8. Resize handles   (.resize-handle-x, .resize-handle-y)
+ *   9. Navigation links (.nav-link, .nav-link-active)
+ */
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ── Base ── */
+/* ── 1. Base reset ─────────────────────────────────────────────
+   Ensure consistent box-sizing and remove default margin/padding
+   so the full-screen layout fills the viewport without overflow.
+────────────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; }
 
 html, body, #root {
@@ -11,37 +29,52 @@ html, body, #root {
   padding: 0;
 }
 
+/* Deep navy radial gradient background — gives the page depth
+   without a flat solid colour.  The gradient fades:
+   slate-800 → near-black navy (#020617) → pure black at edges. */
 body {
-  background:
-    radial-gradient(circle at top, #1f2937 0, #020617 45%, #000000 100%);
+  background: radial-gradient(circle at top, #1f2937 0, #020617 45%, #000000 100%);
   color: #e5e7eb;
   font-family: 'Inter', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
+  overflow-x: hidden;  /* prevent horizontal scroll from stray elements */
 }
 
+/* Tighten heading tracking for a modern developer-tool feel */
 h1, h2, h3 { letter-spacing: -0.02em; }
+/* Comfortable reading line-height for body copy */
 p          { line-height: 1.6; }
 
-/* ── Scrollbar ── */
-::-webkit-scrollbar            { width: 6px; height: 6px; }
-::-webkit-scrollbar-track      { background: #020617; }
-::-webkit-scrollbar-thumb      { background: #334155; border-radius: 3px; }
+/* ── 2. Custom scrollbar ───────────────────────────────────────
+   Thin, dark scrollbar that matches the navy palette.
+   Falls back to the platform default on non-Webkit browsers.
+────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar             { width: 6px; height: 6px; }
+::-webkit-scrollbar-track       { background: #020617; }
+::-webkit-scrollbar-thumb       { background: #334155; border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: #475569; }
 
-/* ── Utility ── */
+/* ── 3. Utility classes ────────────────────────────────────────
+   .font-mono   — monospace stack used in the editor and code output
+   .line-active — highlights the currently executing line in ExecutionPanel
+   .line-done   — faint tint on lines that have already been executed
+────────────────────────────────────────────────────────────── */
 .font-mono { font-family: 'Fira Code', Consolas, 'Courier New', monospace; }
 
 .line-active {
-  background: rgba(56, 189, 248, 0.1);
-  border-left: 2px solid #38bdf8;
+  background: rgba(56, 189, 248, 0.1);  /* sky-400 at 10% — subtle highlight */
+  border-left: 2px solid #38bdf8;       /* sky-400 left accent bar */
   padding-left: 6px;
 }
 .line-done {
-  background: rgba(74, 222, 128, 0.04);
+  background: rgba(74, 222, 128, 0.04); /* green tint for completed lines */
 }
 
-/* Tab bar item */
+/* ── 4. Tab bar ────────────────────────────────────────────────
+   Used by CodeEditor.jsx to render the "main.py" file tab.
+   .tab-item        — inactive tab
+   .tab-item.active — active tab with top blue border (VS Code style)
+────────────────────────────────────────────────────────────── */
 .tab-item {
   @apply px-4 py-2 text-xs font-mono text-gray-400 border-r border-slate-700
          hover:text-white hover:bg-slate-800 cursor-pointer transition-colors duration-150;
@@ -50,26 +83,40 @@ p          { line-height: 1.6; }
   @apply text-white bg-slate-900 border-t-2 border-t-vs-blue;
 }
 
-/* Range input accent */
+/* Teal range-input thumb colour to match the sky palette */
 input[type="range"] { accent-color: #38bdf8; }
 
-/* Panel header */
+/* ── 5. Panel header ───────────────────────────────────────────
+   Shared top-bar style used by all three main panels and the
+   Console Output section.  Always rendered as a flex row with
+   the section title on the left and status/metadata on the right.
+────────────────────────────────────────────────────────────── */
 .panel-header {
   @apply flex items-center justify-between px-3 py-2
          bg-slate-900/80 border-b border-slate-700/80 text-[11px]
          font-mono text-slate-400 select-none;
 }
 
-/* ── Glass panels ── */
+/* ── 6. Glassmorphism panels ───────────────────────────────────
+   Two tiers of frosted-glass containers:
+
+   .glass-panel  — primary container (Editor, Execution, Memory panels).
+                   Larger border-radius, stronger backdrop blur, deeper shadow.
+   .glass-soft   — secondary container (toolbar strip, console, controls bar).
+                   Slightly smaller radius and lighter shadow.
+
+   Both apply a subtle lift + border brightening on hover so panels
+   feel interactive without distracting animations.
+────────────────────────────────────────────────────────────── */
 .glass-panel {
   @apply bg-slate-900/70 border border-slate-700/80 rounded-2xl
          backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.6)];
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 .glass-panel:hover {
-  border-color: rgba(148, 163, 184, 0.4);
+  border-color: rgba(148, 163, 184, 0.4);          /* slate-400/40 */
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.7);
-  transform: translateY(-1px);
+  transform: translateY(-1px);                     /* 1 px lift */
 }
 
 .glass-soft {
@@ -83,7 +130,17 @@ input[type="range"] { accent-color: #38bdf8; }
   transform: translateY(-1px);
 }
 
-/* ── Control buttons ── */
+/* ── 7. Control buttons ────────────────────────────────────────
+   .neon-btn          — base class: layout + font + transition
+   .neon-btn-primary  — sky blue (Run / Pause)
+   .neon-btn-danger   — rose red  (Restart)
+   .neon-btn-muted    — slate grey (Step Back / Step)
+   .neon-btn:disabled — dim + block pointer events
+
+   NOTE: The compact toolbar uses TBtn (inline component in
+   VisualizerPage) which duplicates these styles inline.
+   These classes are kept for Courses, Notes, Tutorials, etc.
+────────────────────────────────────────────────────────────── */
 .neon-btn {
   @apply relative inline-flex items-center justify-center gap-1.5
          px-4 py-2 rounded-lg text-sm font-mono font-semibold
@@ -111,9 +168,22 @@ input[type="range"] { accent-color: #38bdf8; }
   @apply opacity-40 cursor-not-allowed;
 }
 
-/* ── Resize handles (react-resizable-panels) ── */
+/* ── 8. Resize handles (react-resizable-panels v4) ────────────
+   react-resizable-panels renders a <Separator> element between
+   panels.  We style it with a pseudo-element pill that grows on
+   hover/active so the drag affordance is clearly visible without
+   cluttering the UI at rest.
+
+   .resize-handle-x  — vertical pill between left-right panels
+   .resize-handle-y  — horizontal pill between top-bottom panels
+
+   ::before  — extends the invisible hit area so dragging is easy
+   ::after   — the visible pill indicator
+────────────────────────────────────────────────────────────── */
+
+/* Left-right (horizontal) drag handle */
 .resize-handle-x {
-  width: 8px;
+  width: 10px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -121,30 +191,79 @@ input[type="range"] { accent-color: #38bdf8; }
   cursor: col-resize;
   position: relative;
   z-index: 10;
+  user-select: none;
+}
+.resize-handle-x::before {
+  /* Expand the clickable area 4 px on each side without affecting layout */
+  content: '';
+  position: absolute;
+  inset: 0 -4px;
 }
 .resize-handle-x::after {
   content: '';
   display: block;
   width: 2px;
-  height: 40px;
+  height: 36px;
   border-radius: 9999px;
-  background: rgba(148, 163, 184, 0.2);
-  transition: background 0.15s ease, height 0.15s ease;
+  background: rgba(100, 116, 139, 0.3);   /* dim at rest */
+  transition: background 0.15s ease, height 0.15s ease, width 0.15s ease;
 }
+/* Brighten and grow the pill when hovered or actively dragging */
 .resize-handle-x:hover::after,
 .resize-handle-x[data-resize-handle-active]::after {
-  background: rgba(148, 163, 184, 0.55);
-  height: 64px;
+  background: rgba(148, 163, 184, 0.6);
+  height: 60px;
+  width: 3px;
 }
 
-/* ── Navigation links ── */
+/* Top-bottom (vertical) drag handle */
+.resize-handle-y {
+  height: 8px;
+  width: 100%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: row-resize;
+  position: relative;
+  z-index: 10;
+  user-select: none;
+}
+.resize-handle-y::before {
+  content: '';
+  position: absolute;
+  inset: -4px 0;  /* 4 px top/bottom extra hit area */
+}
+.resize-handle-y::after {
+  content: '';
+  display: block;
+  height: 2px;
+  width: 48px;
+  border-radius: 9999px;
+  background: rgba(100, 116, 139, 0.3);
+  transition: background 0.15s ease, width 0.15s ease, height 0.15s ease;
+}
+.resize-handle-y:hover::after,
+.resize-handle-y[data-resize-handle-active]::after {
+  background: rgba(148, 163, 184, 0.6);
+  width: 80px;
+  height: 3px;
+}
+
+/* ── 9. Navigation links ───────────────────────────────────────
+   .nav-link        — base pill-shaped nav item with animated underline
+   .nav-link-active — highlighted state for the current route
+
+   The ::after pseudo-element is a sky-blue underline that scales
+   in horizontally when the link is active (scaleX 0 → 1 transition).
+────────────────────────────────────────────────────────────── */
 .nav-link {
   position: relative;
   padding: 0.4rem 0.9rem;
   border-radius: 9999px;
   font-size: 0.85rem;
   font-weight: 500;
-  color: rgba(203, 213, 225, 0.75);
+  color: rgba(203, 213, 225, 0.75);   /* slate-300 at 75% */
   transition: color 0.15s ease, background-color 0.15s ease;
 }
 .nav-link::after {
@@ -155,22 +274,22 @@ input[type="range"] { accent-color: #38bdf8; }
   bottom: 3px;
   height: 1.5px;
   border-radius: 9999px;
-  background: #38bdf8;
+  background: #38bdf8;           /* sky-400 underline */
   transform: scaleX(0);
   transform-origin: center;
   transition: transform 0.2s ease, opacity 0.2s ease;
   opacity: 0;
 }
 .nav-link:hover {
-  color: #f1f5f9;
-  background-color: rgba(30, 41, 59, 0.7);
+  color: #f1f5f9;                           /* near-white on hover */
+  background-color: rgba(30, 41, 59, 0.7);  /* slate-800/70 pill fill */
 }
 .nav-link-active {
   color: #f1f5f9;
   background-color: rgba(30, 41, 59, 0.9);
-  border: 1px solid rgba(148, 163, 184, 0.2);
+  border: 1px solid rgba(148, 163, 184, 0.2);  /* faint border for active pill */
 }
 .nav-link-active::after {
-  transform: scaleX(1);
+  transform: scaleX(1);  /* slide in the underline */
   opacity: 1;
 }
