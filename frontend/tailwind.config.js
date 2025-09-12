@@ -4,53 +4,40 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Futuristic tech palette
-        'vs-bg':      '#020617', // deep navy
-        'vs-surface': '#020617',
-        'vs-panel':   '#0b1220',
-        'vs-border':  '#1f2937',
-        'vs-blue':    '#38bdf8', // electric blue
-        'vs-green':   '#4ade80', // accent green
-        'vs-yellow':  '#facc15',
-        'vs-orange':  '#fb923c',
-        'vs-purple':  '#a855f7',
-        'vs-red':     '#f97373',
-        'vs-text':    '#e5e7eb',
-        'vs-muted':   '#6b7280',
-        'vs-number':  '#a5f3fc',
+        // Professional developer platform palette (LeetCode / GitHub style)
+        'vs-bg':      '#0B1120',   // page background — deep navy
+        'vs-surface': '#111827',   // card / panel background
+        'vs-panel':   '#111827',   // alias for panels
+        'vs-border':  '#1F2937',   // all borders
+        'vs-blue':    '#3B82F6',   // primary accent — blue-500
+        'vs-green':   '#22C55E',   // success / new variable
+        'vs-yellow':  '#EAB308',   // warning / loop variable
+        'vs-orange':  '#F97316',   // string values
+        'vs-purple':  '#8B5CF6',   // special values
+        'vs-red':     '#EF4444',   // error state
+        'vs-text':    '#E5E7EB',   // primary text — gray-200
+        'vs-muted':   '#9CA3AF',   // secondary text — gray-400
+        'vs-number':  '#60A5FA',   // numeric literal color
       },
       fontFamily: {
-        mono: ['Fira Code', 'Consolas', 'Courier New', 'monospace'],
+        // UI text — modern, clean developer font
         sans: ['Inter', 'system-ui', 'sans-serif'],
+        // Code — JetBrains Mono preferred, Fira Code as fallback
+        mono: ['JetBrains Mono', 'Fira Code', 'Consolas', 'Courier New', 'monospace'],
       },
       animation: {
-        'binary-fall': 'binaryFall linear infinite',
-        'glow-pulse':  'glowPulse 2s ease-in-out infinite',
-        'slide-in':    'slideIn 0.3s ease-out',
-        'fade-up':     'fadeUp 0.5s ease-out',
+        'slide-in': 'slideIn 0.3s ease-out',
+        'fade-up':  'fadeUp 0.4s ease-out',
       },
       keyframes: {
-        binaryFall: {
-          '0%':   { transform: 'translateY(-100%)', opacity: '1' },
-          '100%': { transform: 'translateY(100vh)', opacity: '0.3' },
-        },
-        glowPulse: {
-          '0%, 100%': { boxShadow: '0 0 5px rgba(0,122,204,0.3)' },
-          '50%':      { boxShadow: '0 0 20px rgba(0,122,204,0.8)' },
-        },
         slideIn: {
-          '0%':   { transform: 'translateX(-10px)', opacity: '0' },
-          '100%': { transform: 'translateX(0)',     opacity: '1' },
+          '0%':   { transform: 'translateX(-8px)', opacity: '0' },
+          '100%': { transform: 'translateX(0)',    opacity: '1' },
         },
         fadeUp: {
-          '0%':   { transform: 'translateY(20px)', opacity: '0' },
-          '100%': { transform: 'translateY(0)',    opacity: '1' },
+          '0%':   { transform: 'translateY(16px)', opacity: '0' },
+          '100%': { transform: 'translateY(0)',     opacity: '1' },
         },
-      },
-      boxShadow: {
-        'blue-glow':  '0 0 15px rgba(0, 122, 204, 0.4)',
-        'green-glow': '0 0 15px rgba(78, 201, 176, 0.4)',
-        'inner-top':  'inset 0 2px 4px rgba(0,0,0,0.3)',
       },
     },
   },

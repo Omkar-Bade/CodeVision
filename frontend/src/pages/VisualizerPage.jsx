@@ -56,24 +56,22 @@ const EXAMPLES = {
 ───────────────────────────────────────────────────────────────── */
 function TBtn({ onClick, disabled, title, variant = 'muted', children }) {
   const cls = {
-    primary: 'bg-sky-600/30 text-sky-100 border-sky-500/60 hover:bg-sky-600/50',
-    danger:  'bg-red-700/20  text-red-300  border-red-600/50  hover:bg-red-700/35',
-    muted:   'bg-slate-800/80 text-slate-200 border-slate-600/60 hover:bg-slate-700/80',
+    primary: 'bg-blue-600 text-white border-blue-500 hover:bg-blue-500',
+    danger:  'bg-transparent text-red-400 border-red-800 hover:bg-red-900/30',
+    muted:   'bg-transparent text-gray-300 border-[#374151] hover:bg-[#1F2937] hover:text-white',
   }[variant]
 
   return (
-    <motion.button
+    <button
       onClick={onClick}
       disabled={disabled}
       title={title}
       className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-mono
-                  font-semibold border transition-colors duration-150 outline-none
+                  font-medium border transition-colors duration-150 outline-none
                   disabled:opacity-40 disabled:cursor-not-allowed ${cls}`}
-      whileHover={!disabled ? { scale: 1.05 } : {}}
-      whileTap={!disabled   ? { scale: 0.95 } : {}}
     >
       {children}
-    </motion.button>
+    </button>
   )
 }
 
@@ -258,8 +256,8 @@ export default function VisualizerPage() {
     <div className="min-h-screen bg-vs-bg text-vs-text">
       <Navbar />
 
-      {/* Main content starts below the fixed navbar (pt-14 = 56 px) */}
-      <div className="pt-14 flex flex-col">
+        {/* Main content starts below the fixed navbar (pt-16 = 64 px) */}
+      <div className="pt-16 flex flex-col">
 
         {/* ──────────────────────────────────────────────────────
             STICKY TOOLBAR
@@ -267,8 +265,7 @@ export default function VisualizerPage() {
             Left side  → editor toggle + quick example pills + stale warning
             Right side → playback controls + speed slider
         ────────────────────────────────────────────────────── */}
-        <div className="sticky top-14 z-40 bg-vs-bg/95 backdrop-blur-xl
-                        border-b border-slate-800/70 px-4 py-2 shrink-0">
+        <div className="sticky top-16 z-40 bg-[#111827] border-b border-[#1F2937] px-4 py-2 shrink-0">
           <div className="flex items-center gap-2 flex-wrap min-h-[2.25rem]">
 
             {/* Toggle button — hides/shows the Monaco Editor panel */}
@@ -278,8 +275,8 @@ export default function VisualizerPage() {
               className={`flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md border
                           font-mono transition-colors duration-150 shrink-0
                           ${editorVisible
-                            ? 'bg-sky-600/20 border-sky-500/50 text-sky-300'
-                            : 'bg-slate-800 border-slate-600 text-slate-400 hover:text-white'}`}
+                            ? 'bg-blue-600/15 border-blue-600/40 text-blue-400'
+                            : 'bg-transparent border-[#374151] text-gray-400 hover:text-white hover:bg-[#1F2937]'}`}
             >
               {/* Code brackets icon */}
               <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none"
@@ -289,23 +286,21 @@ export default function VisualizerPage() {
               {editorVisible ? 'Hide Editor' : 'Show Editor'}
             </button>
 
-            <div className="w-px h-4 bg-slate-700/80 shrink-0" />
+            <div className="w-px h-4 bg-[#374151] shrink-0" />
 
             {/* Quick-example pill buttons */}
             <span className="text-xs text-gray-500 font-mono shrink-0">⚡</span>
             {Object.keys(EXAMPLES).map(name => (
-              <motion.button
+              <button
                 key={name}
                 onClick={() => loadExample(name)}
                 disabled={isLoading}
-                className="px-2.5 py-1 text-xs bg-slate-900/80 border border-slate-700
-                           hover:border-vs-blue text-gray-300 hover:text-white rounded-full
-                           transition-colors disabled:opacity-40 shrink-0"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                className="px-2.5 py-1 text-xs bg-[#0B1120] border border-[#374151]
+                           hover:border-blue-600 hover:text-white text-gray-400 rounded-md
+                           transition-colors duration-150 disabled:opacity-40 shrink-0 font-mono"
               >
                 {name}
-              </motion.button>
+              </button>
             ))}
 
             {/* Stale warning — shown when code was edited after the last run */}
@@ -329,7 +324,7 @@ export default function VisualizerPage() {
                 🔁 Restart
               </TBtn>
 
-              <div className="w-px h-4 bg-slate-700/60" />
+              <div className="w-px h-4 bg-[#374151]" />
 
               {/* Step backward through execution history */}
               <TBtn
@@ -361,7 +356,7 @@ export default function VisualizerPage() {
                 ⏭ Step
               </TBtn>
 
-              <div className="w-px h-4 bg-slate-700/60" />
+              <div className="w-px h-4 bg-[#374151]" />
 
               {/* Speed slider: left = slow (2 s), right = fast (80 ms) */}
               <div className="flex items-center gap-1.5">
@@ -397,7 +392,7 @@ export default function VisualizerPage() {
             The editor panel is conditionally rendered; when hidden the other
             two panels expand to fill the full width (via the `key` reset).
         ────────────────────────────────────────────────────── */}
-        <div className="px-4 pt-3 pb-1" style={{ height: 'calc(100vh - 7.75rem)' }}>
+        <div className="px-4 pt-3 pb-1" style={{ height: 'calc(100vh - 8.25rem)' }}>
           <PanelGroup
             // Changing the key forces PanelGroup to remount so panel sizes reset
             // correctly when the editor is toggled.
@@ -456,7 +451,7 @@ export default function VisualizerPage() {
             Animates smoothly as currentStepIndex advances.
         ────────────────────────────────────────────────────── */}
         <div className="px-4 pt-3">
-          <div className="glass-soft px-4 py-2.5">
+          <div className="bg-[#111827] border border-[#1F2937] rounded-xl px-4 py-2.5">
             <div className="flex justify-between text-xs text-gray-500 mb-1.5 font-mono">
               <span>Progress</span>
               <span>
@@ -465,10 +460,9 @@ export default function VisualizerPage() {
                   : '— Not running'}
               </span>
             </div>
-            {/* Animated fill bar driven by the `progress` derived value (0–100) */}
-            <div className="h-1.5 bg-vs-border rounded-full overflow-hidden">
+            <div className="h-1.5 bg-[#1F2937] rounded-full overflow-hidden">
               <motion.div
-                className="h-full bg-gradient-to-r from-vs-blue to-vs-green rounded-full"
+                className="h-full bg-blue-500 rounded-full"
                 animate={{ width: `${progress}%` }}
                 transition={{ duration: 0.25, ease: 'easeOut' }}
               />
@@ -483,23 +477,23 @@ export default function VisualizerPage() {
             is detected (see the useEffect above).
         ────────────────────────────────────────────────────── */}
         <div className="px-4 py-3 pb-12" ref={consoleRef}>
-          <div className="glass-soft overflow-hidden">
+          <div className="bg-[#111827] border border-[#1F2937] rounded-xl overflow-hidden">
 
-            {/* Status header: shows a coloured dot for Error / Output / Idle */}
+            {/* Status header */}
             <div className="panel-header">
               <span className="font-mono text-[11px]">Console Output</span>
               <div className="flex items-center gap-2">
-                {error             && <span className="text-red-400   text-[10px] font-mono">● Error</span>}
-                {output && !error  && <span className="text-vs-green  text-[10px] font-mono">● Output</span>}
-                {!error && !output && <span className="text-slate-600 text-[10px] font-mono">● Idle</span>}
+                {error             && <span className="text-red-400  text-[10px] font-mono">● Error</span>}
+                {output && !error  && <span className="text-green-400 text-[10px] font-mono">● Output</span>}
+                {!error && !output && <span className="text-gray-600 text-[10px] font-mono">● Idle</span>}
               </div>
             </div>
 
-            {/* Animated error block with dismiss button */}
+            {/* Error block */}
             <AnimatePresence>
               {error && (
                 <motion.div
-                  className="mx-3 mt-2 bg-red-900/25 border border-red-700/40
+                  className="mx-3 mt-2 bg-red-950/40 border border-red-800/60
                              rounded-lg p-3 flex items-start gap-3"
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
@@ -511,7 +505,7 @@ export default function VisualizerPage() {
                   </pre>
                   <button
                     onClick={() => setError(null)}
-                    className="text-slate-500 hover:text-white shrink-0 text-xs"
+                    className="text-gray-500 hover:text-white shrink-0 text-xs"
                   >
                     ✕
                   </button>
@@ -519,12 +513,12 @@ export default function VisualizerPage() {
               )}
             </AnimatePresence>
 
-            {/* stdout output from print() statements */}
+            {/* stdout output */}
             <div className="px-4 py-3 font-mono text-sm min-h-[3rem]">
               {!error && output ? (
-                <pre className="text-vs-green whitespace-pre-wrap">{output}</pre>
+                <pre className="text-green-400 whitespace-pre-wrap">{output}</pre>
               ) : !error ? (
-                <span className="text-slate-600">
+                <span className="text-gray-600">
                   No output yet. Run your code to see results here.
                 </span>
               ) : null}

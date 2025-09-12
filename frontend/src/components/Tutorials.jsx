@@ -192,8 +192,8 @@ const CATEGORIES = ['All', ...new Set(TUTORIALS.map(t => t.category))]
 /* ─── DifficultyBadge ─────────────────────────────────────── */
 function DifficultyBadge({ level }) {
   const cls = level === 'Beginner'
-    ? 'text-vs-green bg-vs-green/10 border-vs-green/30'
-    : 'text-vs-yellow bg-vs-yellow/10 border-vs-yellow/30'
+    ? 'text-green-400 bg-green-900/20 border-green-700/50'
+    : 'text-yellow-400 bg-yellow-900/20 border-yellow-700/50'
   return (
     <span className={`text-xs font-mono px-2 py-0.5 rounded-full border ${cls}`}>
       {level}
@@ -205,10 +205,8 @@ function DifficultyBadge({ level }) {
 function TutorialCard({ tut, onExpand, isExpanded, onRun }) {
   return (
     <motion.div
-      className="bg-slate-900/70 border border-slate-700/70 rounded-2xl overflow-hidden
-                 shadow-[0_4px_20px_rgba(0,0,0,0.5)] hover:border-slate-500/70
-                 hover:shadow-[0_8px_32px_rgba(0,0,0,0.65)] hover:-translate-y-px
-                 transition-all duration-200"
+      className="bg-[#111827] border border-[#1F2937] rounded-xl overflow-hidden
+                 hover:border-[#374151] transition-all duration-200"
       initial={{ opacity: 0, y: 16 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
@@ -232,18 +230,16 @@ function TutorialCard({ tut, onExpand, isExpanded, onRun }) {
         <p className="text-gray-400 text-sm mb-4 leading-relaxed">{tut.desc}</p>
 
         <div className="flex items-center gap-2">
-          <motion.button
+          <button
             onClick={() => onRun(tut)}
-            className="flex items-center gap-2 px-4 py-2 bg-vs-blue hover:bg-blue-500
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500
                        text-white rounded-lg text-sm font-semibold transition-colors duration-150"
-            whileHover={{ scale: 1.04 }}
-            whileTap={{ scale: 0.96 }}
           >
             ▶ Run in Visualizer
-          </motion.button>
+          </button>
           <button
             onClick={() => onExpand(tut.id)}
-            className="px-3 py-2 bg-vs-bg border border-vs-border hover:border-gray-500
+            className="px-3 py-2 bg-transparent border border-[#374151] hover:border-gray-500
                        text-gray-400 hover:text-white rounded-lg text-sm transition-colors"
           >
             {isExpanded ? 'Hide Details ▲' : 'Show Details ▼'}
@@ -261,16 +257,16 @@ function TutorialCard({ tut, onExpand, isExpanded, onRun }) {
             transition={{ duration: 0.25 }}
             className="overflow-hidden"
           >
-            <div className="border-t border-vs-border p-5 grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="border-t border-[#1F2937] p-5 grid grid-cols-1 md:grid-cols-2 gap-5">
               {/* Explanation */}
               <div>
-                <h4 className="text-xs text-vs-blue font-mono tracking-widest mb-3">
+                <h4 className="text-xs text-blue-400 font-mono tracking-widest mb-3">
                   STEP-BY-STEP EXPLANATION
                 </h4>
                 <ol className="space-y-2">
                   {tut.explanation.map((e, i) => (
                     <li key={i} className="flex gap-2 text-sm text-gray-300">
-                      <span className="shrink-0 w-5 h-5 rounded-full bg-vs-blue/20 text-vs-blue
+                      <span className="shrink-0 w-5 h-5 rounded-full bg-blue-600/20 text-blue-400
                                        text-xs flex items-center justify-center font-mono mt-0.5">
                         {i + 1}
                       </span>
@@ -283,34 +279,33 @@ function TutorialCard({ tut, onExpand, isExpanded, onRun }) {
               {/* Code + expected output */}
               <div className="space-y-3">
                 <div>
-                  <h4 className="text-xs text-vs-green font-mono tracking-widest mb-2">CODE</h4>
-                  <div className="bg-vs-bg border border-vs-border rounded-lg p-4">
-                    <pre className="text-vs-text font-mono text-sm leading-relaxed">
+                  <h4 className="text-xs text-green-400 font-mono tracking-widest mb-2">CODE</h4>
+                  <div className="bg-[#0B1120] border border-[#1F2937] rounded-lg p-4">
+                    <pre className="text-gray-200 font-mono text-sm leading-relaxed">
                       {tut.code}
                     </pre>
                   </div>
                 </div>
                 <div>
-                  <h4 className="text-xs text-vs-yellow font-mono tracking-widest mb-2">
+                  <h4 className="text-xs text-yellow-400 font-mono tracking-widest mb-2">
                     EXPECTED OUTPUT
                   </h4>
-                  <div className="bg-black/40 border border-vs-border rounded-lg p-3">
-                    <pre className="text-vs-green font-mono text-sm">{tut.output}</pre>
+                  <div className="bg-[#0d1117] border border-[#1F2937] rounded-lg p-3">
+                    <pre className="text-green-400 font-mono text-sm">{tut.output}</pre>
                   </div>
                 </div>
               </div>
             </div>
 
             <div className="px-5 pb-5">
-              <motion.button
+              <button
                 onClick={() => onRun(tut)}
-                className="w-full py-3 bg-gradient-to-r from-vs-blue to-blue-500
-                           text-white rounded-lg font-semibold flex items-center justify-center gap-2"
-                whileHover={{ scale: 1.01 }}
-                whileTap={{ scale: 0.98 }}
+                className="w-full py-3 bg-blue-600 hover:bg-blue-500
+                           text-white rounded-lg font-semibold flex items-center justify-center gap-2
+                           transition-colors duration-150"
               >
                 ▶ Open in CodeVision Visualizer
-              </motion.button>
+              </button>
             </div>
           </motion.div>
         )}
@@ -336,7 +331,7 @@ export default function Tutorials() {
     : TUTORIALS.filter(t => t.category === category)
 
   return (
-    <div className="min-h-screen bg-vs-bg text-vs-text">
+    <div className="min-h-screen bg-[#0B1120] text-[#E5E7EB]">
       <Navbar />
 
       <div className="max-w-4xl mx-auto px-4 pt-20 pb-16">
@@ -347,15 +342,15 @@ export default function Tutorials() {
           animate={{ opacity: 1, y: 0 }}
         >
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full
-                          bg-vs-purple/10 border border-vs-purple/25 text-vs-purple text-sm mb-5">
+                          bg-violet-900/20 border border-violet-700/40 text-violet-400 text-sm mb-5">
             <span>🚀</span> Interactive Tutorials
           </div>
           <h1 className="text-4xl font-bold mb-3">
-            Learn by <span className="text-vs-purple">Doing</span>
+            Learn by <span className="text-violet-400">Doing</span>
           </h1>
           <p className="text-gray-400 max-w-xl mx-auto">
             Each tutorial includes step-by-step explanations.
-            Click <span className="text-vs-blue">▶ Run in Visualizer</span> to see the code
+            Click <span className="text-blue-400">▶ Run in Visualizer</span> to see the code
             execute live in CodeVision.
           </p>
         </motion.div>
@@ -366,10 +361,10 @@ export default function Tutorials() {
             <button
               key={cat}
               onClick={() => setCategory(cat)}
-              className={`px-4 py-1.5 rounded-full text-sm transition-colors duration-150 ${
+              className={`px-4 py-1.5 rounded-lg text-sm transition-colors duration-150 ${
                 category === cat
-                  ? 'bg-vs-purple text-white'
-                  : 'bg-vs-surface border border-vs-border text-gray-400 hover:text-white'
+                  ? 'bg-blue-600 text-white border border-blue-500'
+                  : 'bg-transparent border border-[#374151] text-gray-400 hover:text-white hover:bg-[#1F2937]'
               }`}
             >
               {cat}
@@ -406,8 +401,7 @@ export default function Tutorials() {
 
         {/* Bottom CTA */}
         <motion.div
-          className="mt-12 text-center bg-gradient-to-r from-vs-blue/10 to-vs-purple/10
-                     border border-vs-border rounded-2xl p-8"
+          className="mt-12 text-center bg-[#111827] border border-[#1F2937] rounded-xl p-8"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -418,15 +412,13 @@ export default function Tutorials() {
           <p className="text-gray-400 text-sm mb-5">
             Open the CodeVision Visualizer and type any Python code to see it run.
           </p>
-          <motion.button
+          <button
             onClick={() => navigate('/visualizer')}
-            className="px-8 py-3 bg-vs-blue hover:bg-blue-500 text-white rounded-lg
-                       font-semibold transition-colors duration-200"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.96 }}
+            className="px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg
+                       font-semibold transition-colors duration-150"
           >
             Open Visualizer →
-          </motion.button>
+          </button>
         </motion.div>
       </div>
     </div>

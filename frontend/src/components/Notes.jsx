@@ -8,7 +8,7 @@ const NOTES = [
     icon: '📦',
     title: 'Variables',
     tag: 'Fundamentals',
-    tagColor: 'text-vs-blue bg-vs-blue/10 border-vs-blue/30',
+    tagColor: 'text-blue-400 bg-blue-900/20 border-blue-700/50',
     summary: 'A variable is a named container that stores a value in memory.',
     content: `
 A **variable** is like a labelled box that holds a value. When you write:
@@ -41,7 +41,7 @@ print(name, age, is_student)`,
     icon: '🔁',
     title: 'Variable Assignment & Copy',
     tag: 'Fundamentals',
-    tagColor: 'text-vs-blue bg-vs-blue/10 border-vs-blue/30',
+    tagColor: 'text-blue-400 bg-blue-900/20 border-blue-700/50',
     summary: 'Assigning one variable to another copies the value, not a reference (for primitives).',
     content: `
 When you assign one variable to another:
@@ -71,7 +71,7 @@ print(b)   # 5`,
     icon: '🔢',
     title: 'Data Types',
     tag: 'Fundamentals',
-    tagColor: 'text-vs-blue bg-vs-blue/10 border-vs-blue/30',
+    tagColor: 'text-blue-400 bg-blue-900/20 border-blue-700/50',
     summary: 'Python has several built-in types: int, float, str, bool, list, dict, tuple, set.',
     content: `
 Python automatically detects the type of your data:
@@ -101,7 +101,7 @@ print(type(x), type(y), type(s), type(b))`,
     icon: '🔄',
     title: 'Loops',
     tag: 'Control Flow',
-    tagColor: 'text-vs-yellow bg-vs-yellow/10 border-vs-yellow/30',
+    tagColor: 'text-yellow-400 bg-yellow-900/20 border-yellow-700/50',
     summary: 'Loops repeat a block of code — for loops iterate over sequences, while loops use a condition.',
     content: `
 **for loop** — iterates a fixed number of times:
@@ -134,7 +134,7 @@ print("Sum 1-5:", total)`,
     icon: '🔀',
     title: 'Conditionals',
     tag: 'Control Flow',
-    tagColor: 'text-vs-yellow bg-vs-yellow/10 border-vs-yellow/30',
+    tagColor: 'text-yellow-400 bg-yellow-900/20 border-yellow-700/50',
     summary: 'if / elif / else let your program choose different code paths based on conditions.',
     content: `
 Python uses indentation to define code blocks:
@@ -173,7 +173,7 @@ print("Grade:", grade)`,
     icon: '⚙️',
     title: 'Functions',
     tag: 'Modular Code',
-    tagColor: 'text-vs-green bg-vs-green/10 border-vs-green/30',
+    tagColor: 'text-green-400 bg-green-900/20 border-green-700/50',
     summary: 'Functions are reusable blocks of code that take inputs (parameters) and produce outputs (return values).',
     content: `
 Define a function with **def**:
@@ -212,7 +212,7 @@ print(x, y)`,
     icon: '📋',
     title: 'Lists',
     tag: 'Collections',
-    tagColor: 'text-vs-orange bg-vs-orange/10 border-vs-orange/30',
+    tagColor: 'text-orange-400 bg-orange-900/20 border-orange-700/50',
     summary: 'Lists are ordered, mutable collections that can hold any mix of data types.',
     content: `
 Create a list with square brackets:
@@ -249,7 +249,7 @@ print("Length:", len(nums))`,
     icon: '💬',
     title: 'Strings',
     tag: 'Fundamentals',
-    tagColor: 'text-vs-blue bg-vs-blue/10 border-vs-blue/30',
+    tagColor: 'text-blue-400 bg-blue-900/20 border-blue-700/50',
     summary: 'Strings are sequences of characters. Python provides rich built-in string operations.',
     content: `
 Strings can use single or double quotes:
@@ -292,10 +292,8 @@ const ALL_TAGS = ['All', ...new Set(NOTES.map(n => n.tag))]
 function NoteCard({ note, isOpen, onToggle }) {
   return (
     <motion.div
-      className="bg-slate-900/70 border border-slate-700/70 rounded-2xl overflow-hidden
-                 shadow-[0_4px_20px_rgba(0,0,0,0.5)] hover:border-slate-500/70
-                 hover:shadow-[0_8px_32px_rgba(0,0,0,0.65)] hover:-translate-y-px
-                 transition-all duration-200"
+      className="bg-[#111827] border border-[#1F2937] rounded-xl overflow-hidden
+                 hover:border-[#374151] transition-all duration-200"
       initial={{ opacity: 0, y: 16 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
@@ -334,10 +332,10 @@ function NoteCard({ note, isOpen, onToggle }) {
             transition={{ duration: 0.25, ease: 'easeInOut' }}
             className="overflow-hidden"
           >
-            <div className="border-t border-vs-border p-5 grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="border-t border-[#1F2937] p-5 grid grid-cols-1 md:grid-cols-2 gap-5">
               {/* Explanation */}
               <div>
-                <h3 className="text-vs-blue text-xs font-mono tracking-widest mb-3">EXPLANATION</h3>
+                <h3 className="text-blue-400 text-xs font-mono tracking-widest mb-3">EXPLANATION</h3>
                 <pre className="text-gray-300 text-sm whitespace-pre-wrap leading-relaxed font-sans">
                   {note.content.trim()}
                 </pre>
@@ -345,9 +343,9 @@ function NoteCard({ note, isOpen, onToggle }) {
 
               {/* Code example */}
               <div>
-                <h3 className="text-vs-green text-xs font-mono tracking-widest mb-3">CODE EXAMPLE</h3>
-                <div className="bg-vs-bg border border-vs-border rounded-lg p-4">
-                  <pre className="text-vs-text font-mono text-sm leading-relaxed">
+                <h3 className="text-green-400 text-xs font-mono tracking-widest mb-3">CODE EXAMPLE</h3>
+                <div className="bg-[#0B1120] border border-[#1F2937] rounded-lg p-4">
+                  <pre className="text-gray-200 font-mono text-sm leading-relaxed">
                     {note.codeExample}
                   </pre>
                 </div>
@@ -387,11 +385,11 @@ export default function Notes() {
           animate={{ opacity: 1, y: 0 }}
         >
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full
-                          bg-vs-green/10 border border-vs-green/25 text-vs-green text-sm mb-5">
+                          bg-green-900/20 border border-green-700/40 text-green-400 text-sm mb-5">
             <span>📝</span> Quick Reference
           </div>
           <h1 className="text-4xl font-bold mb-3">
-            Concept <span className="text-vs-green">Notes</span>
+            Concept <span className="text-green-400">Notes</span>
           </h1>
           <p className="text-gray-400 max-w-xl mx-auto">
             Clear, concise explanations of core programming concepts.
@@ -406,9 +404,9 @@ export default function Notes() {
             placeholder="Search notes…"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="flex-1 bg-vs-surface border border-vs-border rounded-lg px-4 py-2
-                       text-sm text-vs-text placeholder-gray-600 focus:outline-none
-                       focus:border-vs-blue transition-colors"
+            className="flex-1 bg-[#111827] border border-[#374151] rounded-lg px-4 py-2
+                       text-sm text-gray-200 placeholder-gray-600 focus:outline-none
+                       focus:border-blue-600 transition-colors"
           />
           <div className="flex gap-2">
             {ALL_TAGS.map(t => (
@@ -417,8 +415,8 @@ export default function Notes() {
                 onClick={() => setFilter(t)}
                 className={`px-3 py-1.5 rounded-lg text-xs transition-colors ${
                   filter === t
-                    ? 'bg-vs-blue text-white'
-                    : 'bg-vs-surface border border-vs-border text-gray-400 hover:text-white'
+                    ? 'bg-blue-600 text-white border border-blue-500'
+                    : 'bg-transparent border border-[#374151] text-gray-400 hover:text-white hover:bg-[#1F2937]'
                 }`}
               >
                 {t}
