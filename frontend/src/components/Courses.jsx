@@ -1,158 +1,13 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Navbar from './Navbar'
-
-const COURSES = [
-  {
-    id: 1,
-    icon: '🐍',
-    title: 'Python Basics',
-    level: 'Beginner',
-    duration: '2 hrs',
-    color: 'vs-blue',
-    border: 'border-vs-blue',
-    desc: 'Start your Python journey with fundamental concepts, syntax, and your very first program.',
-    topics: [
-      'What is Python and why use it?',
-      'Installing Python and setting up your environment',
-      'Writing your first "Hello, World!" program',
-      'Understanding indentation and code blocks',
-      'Comments: single-line and multi-line',
-      'Using the Python REPL interactively',
-    ],
-    lessons: [
-      { title: 'Introduction to Python',     mins: 12 },
-      { title: 'Your First Program',          mins: 8  },
-      { title: 'Understanding Syntax',        mins: 10 },
-      { title: 'Working with the REPL',       mins: 7  },
-    ],
-  },
-  {
-    id: 2,
-    icon: '📦',
-    title: 'Variables & Data Types',
-    level: 'Beginner',
-    duration: '1.5 hrs',
-    color: 'vs-green',
-    border: 'border-vs-green',
-    desc: 'Understand how Python stores information — integers, floats, strings, booleans, and more.',
-    topics: [
-      'What is a variable? Naming rules',
-      'int, float, str, bool data types',
-      'Type checking with type()',
-      'Type conversion: int(), str(), float()',
-      'Multiple assignment in one line',
-      'Constants and best practices',
-    ],
-    lessons: [
-      { title: 'Variables Explained',         mins: 10 },
-      { title: 'Numeric Types',               mins: 9  },
-      { title: 'Strings & Booleans',          mins: 11 },
-      { title: 'Type Conversion',             mins: 8  },
-    ],
-  },
-  {
-    id: 3,
-    icon: '🔄',
-    title: 'Loops',
-    level: 'Beginner',
-    duration: '2 hrs',
-    color: 'vs-yellow',
-    border: 'border-vs-yellow',
-    desc: 'Master iteration — repeat actions with for loops, while loops, and loop control statements.',
-    topics: [
-      'for loop with range()',
-      'Iterating over lists and strings',
-      'while loop and condition-based looping',
-      'break, continue, and pass',
-      'Nested loops',
-      'Loop patterns: sum, count, accumulate',
-    ],
-    lessons: [
-      { title: 'The for Loop',                mins: 12 },
-      { title: 'The while Loop',              mins: 10 },
-      { title: 'Loop Control Statements',     mins: 9  },
-      { title: 'Nested Loops',                mins: 11 },
-    ],
-  },
-  {
-    id: 4,
-    icon: '🔀',
-    title: 'Conditional Statements',
-    level: 'Beginner',
-    duration: '1.5 hrs',
-    color: 'vs-purple',
-    border: 'border-vs-purple',
-    desc: 'Make your programs smart — use if, elif, else to control the flow of execution.',
-    topics: [
-      'Boolean expressions and comparisons',
-      'if / else statements',
-      'elif chains',
-      'Nested conditionals',
-      'Ternary (one-line) if expressions',
-      'Logical operators: and, or, not',
-    ],
-    lessons: [
-      { title: 'Boolean Logic',               mins: 8  },
-      { title: 'if and else',                 mins: 10 },
-      { title: 'elif Chains',                 mins: 9  },
-      { title: 'Nested & Ternary',            mins: 8  },
-    ],
-  },
-  {
-    id: 5,
-    icon: '📋',
-    title: 'Lists & Collections',
-    level: 'Intermediate',
-    duration: '2.5 hrs',
-    color: 'vs-orange',
-    border: 'border-vs-orange',
-    desc: 'Work with groups of data using lists, tuples, dictionaries, and sets.',
-    topics: [
-      'Creating and indexing lists',
-      'List methods: append, remove, sort',
-      'List slicing and comprehensions',
-      'Tuples vs lists',
-      'Dictionaries: key-value storage',
-      'Sets: unique collections',
-    ],
-    lessons: [
-      { title: 'Lists Deep Dive',             mins: 15 },
-      { title: 'Tuples',                      mins: 8  },
-      { title: 'Dictionaries',                mins: 14 },
-      { title: 'Sets',                        mins: 8  },
-    ],
-  },
-  {
-    id: 6,
-    icon: '⚙️',
-    title: 'Functions',
-    level: 'Intermediate',
-    duration: '2 hrs',
-    color: 'vs-blue',
-    border: 'border-vs-blue',
-    desc: 'Learn to write reusable, modular code using functions, parameters, and return values.',
-    topics: [
-      'Defining functions with def',
-      'Parameters and arguments',
-      'Return values',
-      'Default and keyword arguments',
-      'Scope: local vs global variables',
-      'Lambda functions',
-    ],
-    lessons: [
-      { title: 'Defining Functions',          mins: 12 },
-      { title: 'Parameters & Returns',        mins: 11 },
-      { title: 'Scope',                       mins: 10 },
-      { title: 'Lambda & Advanced',           mins: 9  },
-    ],
-  },
-]
+import { fetchCourses } from '../api'
 
 /* ─── Level Badge ────────────────────────────────────────── */
 function LevelBadge({ level }) {
-  const color = level === 'Beginner' ? 'text-green-400 bg-green-900/20 border-green-700/50'
-                                     : 'text-yellow-400 bg-yellow-900/20 border-yellow-700/50'
+  const color = level === 'Beginner'
+    ? 'text-green-400 bg-green-900/20 border-green-700/50'
+    : 'text-yellow-400 bg-yellow-900/20 border-yellow-700/50'
   return (
     <span className={`text-xs font-mono px-2 py-0.5 rounded-full border ${color}`}>
       {level}
@@ -173,11 +28,11 @@ function CourseCard({ course, onOpen }) {
       onClick={() => onOpen(course)}
     >
       <div className="flex items-start justify-between mb-3">
-        <span className="text-4xl">{course.icon}</span>
+        <span className="text-4xl">{course.icon || '📘'}</span>
         <LevelBadge level={course.level} />
       </div>
       <h3 className="text-white font-bold text-lg mb-2 font-sans">{course.title}</h3>
-      <p className="text-gray-400 text-sm mb-4 flex-1 leading-relaxed">{course.desc}</p>
+      <p className="text-gray-400 text-sm mb-4 flex-1 leading-relaxed">{course.description}</p>
       <div className="flex items-center justify-between mt-auto">
         <span className="text-gray-500 text-xs font-mono">⏱ {course.duration}</span>
         <span className="text-xs font-mono text-blue-400 group-hover:underline">
@@ -193,7 +48,7 @@ function CourseModal({ course, onClose }) {
   if (!course) return null
   return (
     <motion.div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -210,13 +65,13 @@ function CourseModal({ course, onClose }) {
         {/* Header */}
         <div className="flex items-start justify-between p-6 border-b border-[#1F2937]">
           <div className="flex items-center gap-4">
-            <span className="text-5xl">{course.icon}</span>
+            <span className="text-5xl">{course.icon || '📘'}</span>
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <h2 className="text-xl font-bold text-white">{course.title}</h2>
                 <LevelBadge level={course.level} />
               </div>
-              <p className="text-gray-400 text-sm">{course.desc}</p>
+              <p className="text-gray-400 text-sm">{course.description}</p>
             </div>
           </div>
           <button onClick={onClose} className="text-gray-500 hover:text-white text-xl ml-4">✕</button>
@@ -226,11 +81,11 @@ function CourseModal({ course, onClose }) {
           {/* Topics */}
           <div>
             <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
-              <span className="text-vs-blue">📖</span> Topics Covered
+              <span className="text-blue-400">📖</span> Topics Covered
             </h3>
             <ul className="space-y-2">
-              {course.topics.map((t, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm text-gray-300">
+              {(course.topics || []).map((t, i) => (
+                <li key={i} className="flex items-start gap-2 text-sm text-gray-300">
                   <span className="text-green-400 mt-0.5 shrink-0">✓</span>
                   {t}
                 </li>
@@ -241,10 +96,10 @@ function CourseModal({ course, onClose }) {
           {/* Lessons */}
           <div>
             <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
-              <span className="text-vs-green">🎓</span> Lessons
+              <span className="text-green-400">🎓</span> Lessons
             </h3>
             <div className="space-y-2">
-              {course.lessons.map((l, i) => (
+              {(course.lessons || []).map((l, i) => (
                 <div key={i}
                   className="flex items-center justify-between bg-[#0B1120] border border-[#1F2937]
                              rounded-lg px-3 py-2.5">
@@ -281,19 +136,46 @@ function CourseModal({ course, onClose }) {
   )
 }
 
+/* ─── Skeleton loader ──────────────────────────────────────── */
+function SkeletonCard() {
+  return (
+    <div className="bg-[#111827] border border-[#1F2937] rounded-xl p-5 animate-pulse">
+      <div className="flex justify-between mb-4">
+        <div className="w-10 h-10 bg-[#1F2937] rounded" />
+        <div className="w-20 h-5 bg-[#1F2937] rounded-full" />
+      </div>
+      <div className="h-5 bg-[#1F2937] rounded mb-2 w-3/4" />
+      <div className="h-4 bg-[#1F2937] rounded mb-1 w-full" />
+      <div className="h-4 bg-[#1F2937] rounded mb-1 w-5/6" />
+      <div className="h-4 bg-[#1F2937] rounded w-2/3" />
+    </div>
+  )
+}
+
 /* ─── Page ────────────────────────────────────────────────── */
 export default function Courses() {
+  const [courses,  setCourses]  = useState([])
   const [selected, setSelected] = useState(null)
   const [filter,   setFilter]   = useState('All')
+  const [loading,  setLoading]  = useState(true)
+  const [error,    setError]    = useState(null)
+
+  // Fetch courses from the Node.js backend
+  useEffect(() => {
+    fetchCourses()
+      .then(({ data }) => setCourses(data))
+      .catch(() => setError('Failed to load courses. Is the backend running?'))
+      .finally(() => setLoading(false))
+  }, [])
 
   const levels = ['All', 'Beginner', 'Intermediate']
-  const filtered = filter === 'All' ? COURSES : COURSES.filter(c => c.level === filter)
+  const filtered = filter === 'All' ? courses : courses.filter(c => c.level === filter)
 
   return (
     <div className="min-h-screen bg-vs-bg text-vs-text">
       <Navbar />
 
-      <div className="max-w-6xl mx-auto px-4 pt-20 pb-16">
+      <div className="max-w-6xl mx-auto px-4 pt-24 pb-16">
         {/* Page header */}
         <motion.div
           className="text-center mb-12"
@@ -330,12 +212,33 @@ export default function Courses() {
           ))}
         </div>
 
+        {/* Error state */}
+        {error && (
+          <div className="text-center py-12 text-red-400 text-sm">
+            <div className="text-4xl mb-3">⚠</div>
+            <p>{error}</p>
+          </div>
+        )}
+
         {/* Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filtered.map((course, i) => (
-            <CourseCard key={course.id} course={course} onOpen={setSelected} />
-          ))}
-        </div>
+        {!error && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {loading
+              ? Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)
+              : filtered.map(course => (
+                  <CourseCard key={course._id} course={course} onOpen={setSelected} />
+                ))
+            }
+          </div>
+        )}
+
+        {/* Empty state */}
+        {!loading && !error && filtered.length === 0 && (
+          <div className="text-center py-16 text-gray-500">
+            <div className="text-4xl mb-3">📭</div>
+            <p>No courses found for this filter.</p>
+          </div>
+        )}
       </div>
 
       {/* Modal */}
