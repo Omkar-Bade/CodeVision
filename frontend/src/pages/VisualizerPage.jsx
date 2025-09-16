@@ -16,7 +16,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { visualizeCode } from '../api'
+import axios from 'axios'
 
 // react-resizable-panels v4 renamed its exports:
 //   PanelGroup → Group  |  PanelResizeHandle → Separator
@@ -26,6 +26,9 @@ import Navbar         from '../components/Navbar'
 import CodeEditor, { DEFAULT_CODE } from '../components/CodeEditor'
 import ExecutionPanel from '../components/ExecutionPanel'
 import MemoryView     from '../components/MemoryView'
+
+// Python FastAPI execution service URL
+const API_URL = 'http://localhost:8000'
 
 // Speed slider maps 0–100 (slider position) to MAX_DELAY–MIN_DELAY ms (execution interval).
 // Slider left = slowest (2 s per step), slider right = fastest (80 ms per step).
@@ -166,16 +169,16 @@ export default function VisualizerPage() {
     setIsLoading(true); setError(null); setSteps([])
     setCurrentStepIndex(-1); setOutput(''); setStale(false)
     try {
-      const { data } = await visualizeCode(src)
+      const { data } = await axios.post(`${API_URL}/execute`, { code: src })
       setOutput(data.output ?? '')
       if (data.error) { setError(data.error); return null }
       setSteps(data.steps ?? [])
       return data.steps
     } catch (err) {
       setError(
-        err.response?.data?.error ??
-        err.response?.data?.detail ??
-        'Cannot connect to the backend.\n\nMake sure both servers are running:\n  cd backend-node  →  npm run dev\n  cd backend       →  python -m uvicorn main:app --reload'
+        err.code === 'ERR_NETWORK'
+          ? 'Cannot connect to the backend.\n\nRun:\n  cd backend\n  python -m uvicorn main:app --reload'
+          : (err.response?.data?.detail ?? String(err))
       )
       return null
     } finally {
