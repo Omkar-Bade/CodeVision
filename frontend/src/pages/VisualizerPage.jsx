@@ -17,6 +17,8 @@ import { useState, useEffect, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import axios from 'axios'
+import { supabase } from '../lib/supabase'
+import { useAuth } from '../context/AuthContext'
 
 // react-resizable-panels v4 renamed its exports:
 //   PanelGroup → Group  |  PanelResizeHandle → Separator
@@ -35,19 +37,6 @@ const API_URL = 'http://localhost:8000'
 const MAX_DELAY = 2000   // ms — slowest execution speed
 const MIN_DELAY = 80     // ms — fastest execution speed
 
-/* ─────────────────────────────────────────────────────────────────
-   Quick-example snippets shown in the toolbar.
-   Each entry is loaded into the editor and immediately executed
-   when the user clicks the pill button.
-───────────────────────────────────────────────────────────────── */
-const EXAMPLES = {
-  'Variable Copy': `a = 5\nb = a\na = 10\nprint(a, b)`,
-  'Loop Sum':      `total = 0\nfor i in range(1, 6):\n    total = total + i\nprint("Sum:", total)`,
-  'Conditional':   `x = 15\nif x > 10:\n    result = "big number"\nelse:\n    result = "small number"\nprint(result)`,
-  'String Ops':    `name = "Alice"\ngreeting = "Hello, " + name\nlength = len(name)\nupper = name.upper()\nprint(greeting)`,
-  'Fibonacci':     `a = 0\nb = 1\nfor _ in range(6):\n    c = a + b\n    a = b\n    b = c\nprint(a)`,
-  'List Ops':      `nums = [3, 1, 4, 1, 5]\nnums.append(9)\ntotal = sum(nums)\ncount = len(nums)\nprint(total, count)`,
-}
 
 /* ─────────────────────────────────────────────────────────────────
    TBtn — compact toolbar button used for playback controls.
@@ -79,7 +68,8 @@ function TBtn({ onClick, disabled, title, variant = 'muted', children }) {
    VisualizerPage — main exported component
 ───────────────────────────────────────────────────────────────── */
 export default function VisualizerPage() {
-  const location = useLocation()
+  const location   = useLocation()
+  const { user }   = useAuth()
 
   // ── Execution state ──────────────────────────────────────────
   // code          – current text in the Monaco editor
@@ -103,6 +93,9 @@ export default function VisualizerPage() {
 
   // editorVisible – toggles the Monaco Editor panel on/off
   const [editorVisible, setEditorVisible] = useState(true)
+
+  // saveStatus – feedback state for the Save Code button
+  const [saveStatus, setSaveStatus] = useState('idle') // 'idle' | 'saving' | 'saved' | 'error'
 
   // intervalRef  – holds the setInterval ID for auto-play; cleared on pause/reset
   // consoleRef   – DOM ref used to scroll the console into view on error
@@ -170,9 +163,22 @@ export default function VisualizerPage() {
     setCurrentStepIndex(-1); setOutput(''); setStale(false)
     try {
       const { data } = await axios.post(`${API_URL}/execute`, { code: src })
-      setOutput(data.output ?? '')
+      const capturedOutput = data.output ?? ''
+      setOutput(capturedOutput)
       if (data.error) { setError(data.error); return null }
       setSteps(data.steps ?? [])
+
+      // Persist execution to Supabase (best-effort — don't block on failure)
+      if (user) {
+        supabase.from('execution_history').insert({
+          user_id: user.id,
+          code:    src,
+          output:  capturedOutput,
+        }).then(({ error: dbErr }) => {
+          if (dbErr) console.warn('Could not save execution history:', dbErr.message)
+        })
+      }
+
       return data.steps
     } catch (err) {
       setError(
@@ -209,13 +215,23 @@ export default function VisualizerPage() {
     setOutput(''); setError(null); setStale(false)
   }
 
-  // Load an example: set code → fetch steps → start auto-play
-  const loadExample = async (name) => {
-    const ex = EXAMPLES[name]
-    setCode(ex); setIsRunning(false); setCurrentStepIndex(-1)
-    setSteps([]); setOutput(''); setError(null); setStale(false)
-    const s = await fetchSteps(ex)
-    if (s?.length) setIsRunning(true)
+  // Save the current editor code to the saved_codes table
+  const handleSaveCode = async () => {
+    if (!user || saveStatus === 'saving') return
+    setSaveStatus('saving')
+    const { error: dbErr } = await supabase.from('saved_codes').insert({
+      user_id:  user.id,
+      code:     code,
+      language: 'python',
+    })
+    if (dbErr) {
+      console.warn('Save failed:', dbErr.message)
+      setSaveStatus('error')
+    } else {
+      setSaveStatus('saved')
+    }
+    // Reset button label after 2 s
+    setTimeout(() => setSaveStatus('idle'), 2000)
   }
 
   // ── Auto-play interval ───────────────────────────────────────
@@ -287,20 +303,23 @@ export default function VisualizerPage() {
 
             <div className="w-px h-4 bg-[#374151] shrink-0" />
 
-            {/* Quick-example pill buttons */}
-            <span className="text-xs text-gray-500 font-mono shrink-0">⚡</span>
-            {Object.keys(EXAMPLES).map(name => (
-              <button
-                key={name}
-                onClick={() => loadExample(name)}
-                disabled={isLoading}
-                className="px-2.5 py-1 text-xs bg-[#0B1120] border border-[#374151]
-                           hover:border-blue-600 hover:text-white text-gray-400 rounded-md
-                           transition-colors duration-150 disabled:opacity-40 shrink-0 font-mono"
-              >
-                {name}
-              </button>
-            ))}
+            {/* Save Code button — persists current editor code to Supabase */}
+            <button
+              onClick={handleSaveCode}
+              disabled={saveStatus === 'saving'}
+              className={`flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md border
+                          font-mono transition-colors duration-150 shrink-0 disabled:opacity-50
+                          ${saveStatus === 'saved'
+                            ? 'bg-green-600/15 border-green-600/40 text-green-400'
+                            : saveStatus === 'error'
+                              ? 'bg-red-600/15 border-red-600/40 text-red-400'
+                              : 'bg-transparent border-[#374151] text-gray-400 hover:text-white hover:bg-[#1F2937]'}`}
+            >
+              {saveStatus === 'saving' ? '💾 Saving…'
+               : saveStatus === 'saved'  ? '✓ Saved!'
+               : saveStatus === 'error'  ? '✕ Failed'
+               : '💾 Save Code'}
+            </button>
 
             {/* Stale warning — shown when code was edited after the last run */}
             {stale && (
