@@ -25,7 +25,7 @@ export default function LoginPage() {
       await signIn({ email: form.email, password: form.password })
       navigate('/')
     } catch (err) {
-      setError(err.message ?? 'Sign in failed. Please try again.')
+      setError(err.message ?? 'Login failed. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -48,7 +48,7 @@ export default function LoginPage() {
         className="w-full max-w-sm bg-[#111827] border border-[#1F2937] rounded-xl p-8"
         initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}
       >
-        <h1 className="text-2xl font-bold text-white mb-1">Sign in</h1>
+        <h1 className="text-2xl font-bold text-white mb-1">Log In</h1>
         <p className="text-gray-400 text-sm mb-6">Welcome back to CodeVision</p>
 
         {error && (
@@ -88,7 +88,7 @@ export default function LoginPage() {
                        disabled:cursor-not-allowed text-white rounded-lg font-semibold text-sm
                        transition-colors duration-150 mt-2"
           >
-            {loading ? 'Signing in…' : 'Sign in'}
+            {loading ? 'Logging in…' : 'Log In'}
           </button>
         </form>
 
