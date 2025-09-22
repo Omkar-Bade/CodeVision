@@ -1,54 +1,62 @@
 """
-executor.py — CodeVision Python execution engine
+executor.py — CodeVision Python execution engine (v3)
 
-Runs user-submitted Python code inside a sys.settrace hook so every
-line executed produces a snapshot of the interpreter state.
+Runs user-submitted Python code inside a sys.settrace hook and produces
+a step-by-step execution trace suitable for the CodeVision visualizer.
 
-Each snapshot (step) contains:
-  - line       : line number that just executed
-  - code       : source text of that line
-  - memory     : dict of user variables  →  { value, size_bytes, type }
-  - event      : "line" or "return"
+Architecture
+------------
+The key design challenge with function tracing is that Python's "line"
+event fires BEFORE a line executes, not after.  To capture the state
+AFTER a line runs we use a "pending" pattern:
 
-Memory size is measured with sys.getsizeof() which returns the
-*shallow* footprint of the object itself in CPython (bytes).
-For containers (list, dict, set) this is the size of the container
-shell only — it does NOT recursively count the contained items.
-This is intentional: it matches what CPython actually allocates for
-the variable binding and is a useful educational approximation.
+  • When we see "line N", we flush (record) the PREVIOUS pending line
+    for that frame (because it has now fully executed), then mark line N
+    as the new pending.
+  • When "return" fires for a frame, we flush the last pending line for
+    that frame, then record the return itself.
 
-Typical shallow sizes on CPython 3.11 (64-bit):
-  int   (small)  : 28 bytes
-  float          : 24 bytes
-  bool           : 28 bytes
-  str  (1 char)  : 50 bytes  + 1 byte per extra character
-  list (empty)   : 56 bytes  + 8 bytes per extra slot
-  dict (empty)   : 184 bytes
-  set  (empty)   : 216 bytes
+Critically, each frame gets its OWN pending entry (keyed by frame id).
+The old single-global prev_lineno approach broke on function calls
+because a "call" event switches the active frame without flushing the
+caller's pending correctly.  Per-frame tracking fixes this completely.
+
+Each step contains:
+  step        — sequential index (1-based)
+  line        — source line number
+  code        — stripped source text of that line
+  memory      — { name: {value, size_bytes, type} } for the current scope
+  event       — "line" | "call" | "return" | "exception"
+  scope       — "global" or function name
+  call_stack  — [ {name, locals}, … ] outermost → current
+  annotations — [ {type, detail}, … ]  educational hints
+
+Annotation types:
+  call       – entering a user function
+  return     – function returning a value
+  input      – input() simulated
+  type_cast  – int() / str() / float() etc.
+  builtin    – len() / range() / type() etc.
+  exception  – runtime error
 """
 
 import sys
 import io
+import re
 import traceback
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
+from collections import deque
 
-# Hard cap on the number of execution steps to prevent infinite loops
 MAX_STEPS = 500
 
 
-# ── Value serialization ──────────────────────────────────────────────────────
+# ── Value serialization ──────────────────────────────────────────────
 
 def serialize_value(v: Any) -> Any:
-    """
-    Recursively convert a Python value to a JSON-serializable form.
-    Containers are truncated to 20 items to keep payloads small.
-    Falls back to repr() for any type not handled explicitly.
-    """
     try:
         if v is None:
             return None
-        elif isinstance(v, bool):
-            # Must be checked before int because bool is a subclass of int
+        elif isinstance(v, bool):          # must precede int check
             return v
         elif isinstance(v, (int, float)):
             return v
@@ -59,8 +67,9 @@ def serialize_value(v: Any) -> Any:
         elif isinstance(v, dict):
             return {str(k): serialize_value(val) for k, val in list(v.items())[:20]}
         elif isinstance(v, set):
-            # Sets are unordered — sort for stable display
             return sorted([serialize_value(i) for i in list(v)[:20]], key=str)
+        elif isinstance(v, range):
+            return list(v)[:20]
         else:
             return repr(v)
     except Exception:
@@ -68,10 +77,6 @@ def serialize_value(v: Any) -> Any:
 
 
 def get_memory_size(v: Any) -> int:
-    """
-    Return the shallow memory footprint of v in bytes using sys.getsizeof().
-    Returns 0 if the measurement fails for any reason.
-    """
     try:
         return sys.getsizeof(v)
     except Exception:
@@ -79,154 +84,242 @@ def get_memory_size(v: Any) -> int:
 
 
 def get_python_type(v: Any) -> str:
-    """
-    Return a clean, human-readable Python type name for v.
-    Uses the actual runtime type so subclasses (e.g. bool) are named correctly.
-    """
     if v is None:
         return "NoneType"
     return type(v).__name__
 
 
-# ── Variable extraction ──────────────────────────────────────────────────────
+# ── Variable extraction ──────────────────────────────────────────────
 
-# Built-in names that are always present in a module frame but are NOT
-# user-defined variables — skip them when building the memory snapshot.
 _EXCLUDED_NAMES = {
     "__builtins__", "__name__", "__doc__", "__package__",
     "__loader__", "__spec__", "__annotations__", "__file__",
-    "__cached__", "__build_class__",
+    "__cached__", "__build_class__", "__return__",
 }
 
 
 def get_user_vars(f_locals: Dict) -> Dict:
-    """
-    Extract user-defined variables from a frame's local namespace and return
-    a structured snapshot that includes the serialized value, its memory size,
-    and its Python type name.
-
-    Each entry in the returned dict looks like:
-        {
-            "value"     : <JSON-serializable representation>,
-            "size_bytes": <int — shallow sys.getsizeof() in bytes>,
-            "type"      : <str — Python type name, e.g. "int", "str", "list">
-        }
-
-    Functions and other callables are excluded because they clutter the
-    visualization without adding educational value for beginners.
-    """
+    """Return a snapshot of user-defined variables from a frame's locals."""
     result = {}
     for k, v in f_locals.items():
-        # Skip dunder names and known built-in frame attributes
         if k in _EXCLUDED_NAMES or k.startswith("__"):
             continue
-        # Skip functions / lambdas / classes but keep all data types
+        # Exclude callables (functions, lambdas, classes) — keep data values
         if callable(v) and not isinstance(
             v, (int, float, str, bool, list, dict, tuple, set, type(None))
         ):
             continue
-
         result[k] = {
-            "value"     : serialize_value(v),
+            "value":      serialize_value(v),
             "size_bytes": get_memory_size(v),
-            "type"      : get_python_type(v),
+            "type":       get_python_type(v),
         }
     return result
 
 
-# ── Main execution engine ────────────────────────────────────────────────────
+# ── Annotation helpers ────────────────────────────────────────────────
 
-def execute_code(code: str) -> Dict:
+_TYPE_CAST_RE  = re.compile(r'\b(int|float|str|bool|list|dict|set|tuple)\s*\(')
+_BUILTIN_RE    = re.compile(
+    r'\b(len|type|range|abs|max|min|sum|sorted|reversed|enumerate|'
+    r'zip|map|filter|round|pow|chr|ord|hex|oct|bin|isinstance)\s*\('
+)
+_INPUT_RE      = re.compile(r'\binput\s*\(')
+
+
+def detect_annotations(line_code: str) -> List[Dict]:
+    """Produce educational annotation tags for notable constructs on a line."""
+    ann = []
+    for m in _TYPE_CAST_RE.finditer(line_code):
+        ann.append({"type": "type_cast",
+                    "detail": f"{m.group(1)}() — converts the value to {m.group(1)}"})
+    for m in _BUILTIN_RE.finditer(line_code):
+        ann.append({"type": "builtin",
+                    "detail": f"{m.group(1)}() called"})
+    if _INPUT_RE.search(line_code):
+        ann.append({"type": "input",
+                    "detail": "input() — reads user input"})
+    return ann
+
+
+# ── Main execution engine ─────────────────────────────────────────────
+
+def execute_code(code: str, inputs: Optional[List[str]] = None) -> Dict:
     """
-    Execute Python source code and capture a step-by-step execution trace.
+    Execute Python source and return a full step-by-step trace.
 
-    Strategy
-    --------
-    1. Compile the source with a custom filename ("<codevision>") so the
-       tracer can distinguish user code from stdlib frames.
-    2. Install a sys.settrace hook that fires on every "line" and "return"
-       event inside the user's code.
-    3. On each "line" event, record the state of the *previous* line
-       (memory reflects what that line produced after it ran).
-    4. On the final "return" event, record the very last line's state.
-    5. Redirect stdout/stderr to a StringIO buffer so print() output is
-       captured and returned separately rather than written to the terminal.
+    Parameters
+    ----------
+    code   : Python source string.
+    inputs : Values fed to input() calls, in order.
 
     Returns
     -------
-    {
-        "steps"      : list of step dicts,
-        "output"     : captured stdout string,
-        "error"      : error message string or None,
-        "total_steps": int
-    }
+    { steps, output, error, total_steps }
     """
+
     steps: List[Dict] = []
     code_lines = code.split("\n")
 
-    # Mutable container so the inner tracer closure can update it
-    prev_lineno = [None]
+    # ── Per-frame state ───────────────────────────────────────────
+    # frame_pending : frame_id → lineno that has been entered but not yet
+    #                 flushed (i.e. the line that most recently fired a
+    #                 "line" event and is currently executing).
+    frame_pending: Dict[int, int] = {}
+
+    # frame_names   : frame_id → scope label ("global" or function name)
+    frame_names: Dict[int, str] = {}
+
+    # call_stack    : ordered list of active function frames (excluding global).
+    #                 Each entry: { "name": str, "locals": dict }
+    call_stack: List[Dict] = []
+
+    # ── Helpers ───────────────────────────────────────────────────
+
+    def line_text(lineno: int) -> str:
+        """Return the stripped source text for a 1-based line number."""
+        if 0 < lineno <= len(code_lines):
+            return code_lines[lineno - 1].strip()
+        return ""
+
+    def stack_snapshot() -> List[Dict]:
+        """Immutable snapshot of the current call stack for embedding in a step."""
+        return [{"name": f["name"], "locals": dict(f["locals"])}
+                for f in call_stack]
+
+    def record(frame, lineno: int, event: str,
+               extra_ann: Optional[List[Dict]] = None) -> None:
+        """Append one step to the trace."""
+        if len(steps) >= MAX_STEPS:
+            return
+        lc = line_text(lineno)
+        scope = frame_names.get(id(frame), "global")
+        all_ann = (extra_ann or []) + detect_annotations(lc)
+        steps.append({
+            "step":        len(steps) + 1,
+            "line":        lineno,
+            "code":        lc,
+            "memory":      get_user_vars(frame.f_locals),
+            "event":       event,
+            "scope":       scope,
+            "call_stack":  stack_snapshot(),
+            "annotations": all_ann,
+        })
+
+    def flush_pending(frame) -> None:
+        """
+        If this frame has a pending (entered-but-not-yet-recorded) line,
+        record it as a 'line' step now.  This is called when a LATER event
+        confirms that the pending line has fully completed.
+        """
+        fid = id(frame)
+        if fid in frame_pending:
+            ln = frame_pending.pop(fid)
+            record(frame, ln, "line")
+
+    # ── Tracer ────────────────────────────────────────────────────
 
     def tracer(frame, event, arg):
-        # Ignore any frames not belonging to user-submitted code
+        # Only trace user-submitted code, not stdlib/built-ins
         if frame.f_code.co_filename != "<codevision>":
             return tracer
 
-        # Safety guard: stop tracing if we've hit the step limit
         if len(steps) >= MAX_STEPS:
             raise RuntimeError(
                 f"Execution exceeded {MAX_STEPS} steps. "
                 "Possible infinite loop detected."
             )
 
-        lineno = frame.f_lineno
+        fid       = id(frame)
+        lineno    = frame.f_lineno
+        func_name = frame.f_code.co_name
 
+        # ── CALL ─────────────────────────────────────────────────
+        if event == "call":
+            if func_name == "<module>":
+                # Top-level module frame — label it "global", no step emitted
+                frame_names[fid] = "global"
+            else:
+                # Entering a user-defined function:
+                #   1. Label the new frame
+                #   2. Push it onto the call stack
+                #   3. Emit a "call" step so the visualizer shows the entry point
+                frame_names[fid] = func_name
+                call_stack.append({"name": func_name, "locals": {}})
+                record(frame, lineno, "call", [
+                    {"type": "call",
+                     "detail": f"Calling {func_name}() — new stack frame created"}
+                ])
+            return tracer
+
+        # ── LINE ─────────────────────────────────────────────────
         if event == "line":
-            # When we move to a new line, the PREVIOUS line has fully executed.
-            # Record its state now so memory reflects what that line produced.
-            if prev_lineno[0] is not None:
-                prev = prev_lineno[0]
-                line_code = (
-                    code_lines[prev - 1].strip()
-                    if 0 < prev <= len(code_lines)
-                    else ""
-                )
-                steps.append({
-                    "step"  : len(steps) + 1,
-                    "line"  : prev,
-                    "code"  : line_code,
-                    "memory": get_user_vars(frame.f_locals),
-                    "event" : "line",
-                })
-            prev_lineno[0] = lineno
+            # Keep the call-stack locals in sync with the current frame
+            scope = frame_names.get(fid, "global")
+            if call_stack and scope != "global":
+                call_stack[-1]["locals"] = get_user_vars(frame.f_locals)
 
-        elif event == "return":
-            # The function is about to return — capture the final line's state
-            line_code = (
-                code_lines[lineno - 1].strip()
-                if 0 < lineno <= len(code_lines)
-                else ""
-            )
-            steps.append({
-                "step"  : len(steps) + 1,
-                "line"  : lineno,
-                "code"  : line_code,
-                "memory": get_user_vars(frame.f_locals),
-                "event" : "return",
-            })
+            # The previously pending line for THIS frame has now finished —
+            # record its post-execution state and mark the new line as pending.
+            flush_pending(frame)
+            frame_pending[fid] = lineno
+            return tracer
+
+        # ── RETURN ───────────────────────────────────────────────
+        if event == "return":
+            scope = frame_names.get(fid, "global")
+
+            # Sync locals one final time
+            if call_stack and scope != "global":
+                call_stack[-1]["locals"] = get_user_vars(frame.f_locals)
+
+            # Flush the last line inside this function (it fully executed)
+            flush_pending(frame)
+
+            # Emit a "return" step for user functions (not the module frame)
+            if scope not in ("global", "<module>"):
+                ret_str = repr(arg) if arg is not None else "None"
+                record(frame, lineno, "return", [
+                    {"type":   "return",
+                     "detail": f"{scope}() returned {ret_str}"}
+                ])
+                # Remove this frame from the call stack
+                if call_stack:
+                    call_stack.pop()
+
+            return tracer
+
+        # ── EXCEPTION ────────────────────────────────────────────
+        if event == "exception":
+            exc_msg = str(arg[1]) if arg else "Unknown error"
+            record(frame, lineno, "exception", [
+                {"type": "exception", "detail": exc_msg}
+            ])
+            return tracer
 
         return tracer
 
-    # Redirect stdout/stderr so print() output is captured, not printed
+    # ── Simulated input() ─────────────────────────────────────────
+    input_queue = deque(inputs or [])
+
+    def fake_input(prompt=""):
+        val = input_queue.popleft() if input_queue else ""
+        # Echo prompt + value to stdout so it appears in console output
+        sys.stdout.write(f"{prompt}{val}\n")
+        return val
+
+    # ── Execute ───────────────────────────────────────────────────
     old_stdout, old_stderr = sys.stdout, sys.stderr
-    sys.stdout = io.StringIO()
-    sys.stderr = io.StringIO()
-    error_info = None
+    sys.stdout  = io.StringIO()
+    sys.stderr  = io.StringIO()
+    error_info  = None
+
+    exec_globals = {"input": fake_input}
 
     try:
         compiled = compile(code, "<codevision>", "exec")
         sys.settrace(tracer)
-        exec(compiled, {})  # noqa: S102
+        exec(compiled, exec_globals)  # noqa: S102
     except SyntaxError as e:
         error_info = f"SyntaxError on line {e.lineno}: {e.msg}"
     except RuntimeError as e:
@@ -234,30 +327,34 @@ def execute_code(code: str) -> Dict:
     except Exception:
         error_info = traceback.format_exc()
     finally:
-        sys.settrace(None)          # always remove the trace hook
-        output        = sys.stdout.getvalue()
-        sys.stdout    = old_stdout
-        sys.stderr    = old_stderr
+        sys.settrace(None)
+        output     = sys.stdout.getvalue()
+        sys.stdout = old_stdout
+        sys.stderr = old_stderr
 
-    # Remove consecutive identical steps that can appear during nested calls
-    unique_steps: List[Dict] = []
+    # ── Deduplication ─────────────────────────────────────────────
+    # Remove consecutive identical steps (same line + memory + event + scope).
+    # "call" and "return" steps are NEVER deduplicated — they carry distinct
+    # educational meaning even when memory hasn't changed.
+    unique: List[Dict] = []
     for step in steps:
         if (
-            unique_steps
-            and unique_steps[-1]["line"]   == step["line"]
-            and unique_steps[-1]["memory"] == step["memory"]
-            and unique_steps[-1]["event"]  == step["event"]
+            unique
+            and step["event"] not in ("call", "return", "exception")
+            and unique[-1]["line"]   == step["line"]
+            and unique[-1]["memory"] == step["memory"]
+            and unique[-1]["event"]  == step["event"]
+            and unique[-1]["scope"]  == step["scope"]
         ):
             continue
-        unique_steps.append(step)
+        unique.append(step)
 
-    # Re-number steps sequentially after deduplication
-    for i, step in enumerate(unique_steps):
-        step["step"] = i + 1
+    for i, s in enumerate(unique):
+        s["step"] = i + 1
 
     return {
-        "steps"      : unique_steps,
-        "output"     : output,
-        "error"      : error_info,
-        "total_steps": len(unique_steps),
+        "steps":       unique,
+        "output":      output,
+        "error":       error_info,
+        "total_steps": len(unique),
     }
