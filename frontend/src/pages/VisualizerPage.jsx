@@ -25,6 +25,7 @@ import { useAuth } from '../context/AuthContext'
 import { Group as PanelGroup, Panel, Separator as PanelResizeHandle } from 'react-resizable-panels'
 
 import Navbar         from '../components/Navbar'
+import Footer         from '../components/Footer'
 import CodeEditor, { DEFAULT_CODE } from '../components/CodeEditor'
 import ExecutionPanel from '../components/ExecutionPanel'
 import MemoryView     from '../components/MemoryView'
@@ -576,6 +577,8 @@ export default function VisualizerPage() {
         </div>
 
       </div>
+
+      <Footer />
     </div>
   )
 }

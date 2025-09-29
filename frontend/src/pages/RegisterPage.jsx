@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
+import Footer from '../components/Footer'
 
 export default function RegisterPage() {
   const navigate = useNavigate()
@@ -37,28 +38,31 @@ export default function RegisterPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-[#0B1120] flex flex-col items-center justify-center px-4">
-        <motion.div
-          className="w-full max-w-sm bg-[#111827] border border-[#1F2937] rounded-xl p-8 text-center"
-          initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-        >
-          <div className="text-5xl mb-4">✅</div>
-          <h2 className="text-xl font-bold text-white mb-2">Account created!</h2>
-          <p className="text-gray-400 text-sm mb-6">
-            Check your email inbox and click the confirmation link, then sign in.
-          </p>
-          <Link to="/login"
-            className="block w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-semibold text-sm text-center transition-colors">
-            Go to Log In
-          </Link>
-        </motion.div>
+      <div className="min-h-screen bg-[#0B1120] flex flex-col">
+        <div className="flex-1 flex flex-col items-center justify-center px-4 py-12">
+          <motion.div
+            className="w-full max-w-sm bg-[#111827] border border-[#1F2937] rounded-xl p-8 text-center"
+            initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+          >
+            <div className="text-5xl mb-4">✅</div>
+            <h2 className="text-xl font-bold text-white mb-2">Account created!</h2>
+            <p className="text-gray-400 text-sm mb-6">
+              Check your email inbox and click the confirmation link, then sign in.
+            </p>
+            <Link to="/login"
+              className="block w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-semibold text-sm text-center transition-colors">
+              Go to Log In
+            </Link>
+          </motion.div>
+        </div>
+        <Footer />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-[#0B1120] flex flex-col items-center justify-center px-4">
-
+    <div className="min-h-screen bg-[#0B1120] flex flex-col">
+      <div className="flex-1 flex flex-col items-center justify-center px-4 py-12">
       {/* Logo */}
       <Link to="/" className="flex items-center gap-2 mb-8 group">
         <div className="w-9 h-9 rounded-lg bg-blue-600 flex items-center justify-center group-hover:bg-blue-500 transition-colors">
@@ -142,8 +146,9 @@ export default function RegisterPage() {
           <Link to="/login" className="text-blue-400 hover:underline">Log in</Link>
         </p>
       </motion.div>
+      </div>
 
-      <p className="mt-6 text-xs text-gray-600">© 2025 CodeVision</p>
+      <Footer />
     </div>
   )
 }

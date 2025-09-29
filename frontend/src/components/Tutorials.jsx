@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import Navbar from './Navbar'
+import Footer from './Footer'
 
 const TUTORIALS = [
   {
@@ -264,6 +265,8 @@ export default function Tutorials() {
           </button>
         </motion.div>
       </div>
+
+      <Footer />
     </div>
   )
 }

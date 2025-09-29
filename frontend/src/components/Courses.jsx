@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Navbar from './Navbar'
+import Footer from './Footer'
 
 const COURSES = [
   {
@@ -199,6 +200,8 @@ export default function Courses() {
           ))}
         </div>
       </div>
+
+      <Footer />
 
       <AnimatePresence>
         {selected && <CourseModal course={selected} onClose={() => setSelected(null)} />}

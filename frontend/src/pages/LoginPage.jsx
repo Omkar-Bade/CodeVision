@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
+import Footer from '../components/Footer'
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -32,8 +33,8 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0B1120] flex flex-col items-center justify-center px-4">
-
+    <div className="min-h-screen bg-[#0B1120] flex flex-col">
+      <div className="flex-1 flex flex-col items-center justify-center px-4 py-12">
       {/* Logo */}
       <Link to="/" className="flex items-center gap-2 mb-8 group">
         <div className="w-9 h-9 rounded-lg bg-blue-600 flex items-center justify-center group-hover:bg-blue-500 transition-colors">
@@ -97,8 +98,9 @@ export default function LoginPage() {
           <Link to="/register" className="text-blue-400 hover:underline">Create one</Link>
         </p>
       </motion.div>
+      </div>
 
-      <p className="mt-6 text-xs text-gray-600">© 2025 CodeVision</p>
+      <Footer />
     </div>
   )
 }
