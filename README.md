@@ -231,6 +231,12 @@ Execute Python code and return step-by-step trace.
 
 ---
 
+## Project Summary
+
+For presentations, hackathon pitches, or documentation, see [PROJECT_SUMMARY.md](PROJECT_SUMMARY.md).
+
+---
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
