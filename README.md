@@ -248,5 +248,3 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 MIT License — see [LICENSE](LICENSE).
 
 ---
-
-Built with ❤️ for Hackathon 2025
