@@ -1,32 +1,57 @@
+/**
+ * ExecutionPanel.jsx
+ *
+ * Displays the step-by-step execution view for the currently running code.
+ *
+ * Responsibilities:
+ *   1. Shows a "current step info card" — event type, line number, scope
+ *      badge, the source code on that line, and educational annotations
+ *      (function calls, returns, type casts, built-ins, exceptions).
+ *   2. Renders the full source listing with per-line highlighting:
+ *        - Active line  → bright white background + animated ◄ pointer
+ *        - Executed     → slightly lighter dim text (already visited)
+ *        - Not reached  → dark muted text
+ *      The active line is automatically scrolled into view.
+ *   3. Renders a "step breadcrumb" footer — a compact grid of coloured
+ *      tiles, one per step, visualising progress through the trace.
+ *
+ * Props:
+ *   code             — original Python source string (used to build the listing)
+ *   steps            — array of step objects returned by the backend
+ *   currentStepIndex — 0-based index of the step currently displayed
+ *
+ * Annotation types (defined in ANNOTATION_STYLES):
+ *   call, return, input, type_cast, builtin, exception
+ */
 import { useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 const ANNOTATION_STYLES = {
-  call:      { icon: '📞', color: 'text-blue-400',   bg: 'bg-blue-900/15',   border: 'border-blue-800/40' },
-  return:    { icon: '↩️',  color: 'text-green-400',  bg: 'bg-green-900/15',  border: 'border-green-800/40' },
-  input:     { icon: '⌨️',  color: 'text-yellow-400', bg: 'bg-yellow-900/15', border: 'border-yellow-800/40' },
-  type_cast: { icon: '🔄', color: 'text-cyan-400',   bg: 'bg-cyan-900/15',   border: 'border-cyan-800/40' },
-  builtin:   { icon: '⚙️',  color: 'text-gray-400',   bg: 'bg-gray-900/15',   border: 'border-gray-700/40' },
-  exception: { icon: '💥', color: 'text-red-400',    bg: 'bg-red-900/15',    border: 'border-red-800/40' },
+  call: { icon: '📞', color: 'text-blue-400', bg: 'bg-blue-900/15', border: 'border-blue-800/40' },
+  return: { icon: '↩️', color: 'text-green-400', bg: 'bg-green-900/15', border: 'border-green-800/40' },
+  input: { icon: '⌨️', color: 'text-yellow-400', bg: 'bg-yellow-900/15', border: 'border-yellow-800/40' },
+  type_cast: { icon: '🔄', color: 'text-cyan-400', bg: 'bg-cyan-900/15', border: 'border-cyan-800/40' },
+  builtin: { icon: '⚙️', color: 'text-gray-400', bg: 'bg-gray-900/15', border: 'border-gray-700/40' },
+  exception: { icon: '💥', color: 'text-red-400', bg: 'bg-red-900/15', border: 'border-red-800/40' },
 }
 const DEFAULT_ANN_STYLE = { icon: '•', color: 'text-gray-400', bg: 'bg-[#0d1117]', border: 'border-[#1F2937]' }
 
 const EVENT_LABELS = {
-  call:      'Function Call',
-  return:    'Return',
-  line:      'Executing',
+  call: 'Function Call',
+  return: 'Return',
+  line: 'Executing',
   exception: 'Error',
 }
 
 export default function ExecutionPanel({ code, steps, currentStepIndex }) {
-  const codeLines   = (code || '').split('\n')
-  const totalSteps  = steps.length
-  const step        = currentStepIndex >= 0 ? steps[currentStepIndex] : null
-  const activeLine  = step?.line ?? null
+  const codeLines = (code || '').split('\n')
+  const totalSteps = steps.length
+  const step = currentStepIndex >= 0 ? steps[currentStepIndex] : null
+  const activeLine = step?.line ?? null
   const annotations = step?.annotations ?? []
-  const scope       = step?.scope ?? 'global'
-  const event       = step?.event ?? 'line'
-  const lineRefs    = useRef({})
+  const scope = step?.scope ?? 'global'
+  const event = step?.event ?? 'line'
+  const lineRefs = useRef({})
 
   useEffect(() => {
     if (activeLine && lineRefs.current[activeLine]) {
@@ -112,9 +137,9 @@ export default function ExecutionPanel({ code, steps, currentStepIndex }) {
       {/* Code listing with line highlights */}
       <div className="flex-1 overflow-auto px-3 py-3 space-y-px font-mono text-sm">
         {codeLines.map((line, idx) => {
-          const num     = idx + 1
-          const active  = activeLine === num
-          const done    = wasExecuted(num)
+          const num = idx + 1
+          const active = activeLine === num
+          const done = wasExecuted(num)
           const isEmpty = line.trim() === '' || line.trim().startsWith('#')
 
           return (
@@ -164,8 +189,8 @@ export default function ExecutionPanel({ code, steps, currentStepIndex }) {
                   ${i < currentStepIndex
                     ? 'bg-green-500/15 text-green-400'
                     : i === currentStepIndex
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-[#1F2937] text-gray-600'}`}
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-[#1F2937] text-gray-600'}`}
               >
                 {s.line}
               </div>

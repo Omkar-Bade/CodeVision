@@ -1,17 +1,38 @@
+/**
+ * Navbar.jsx
+ *
+ * Fixed top navigation bar rendered on every page.
+ *
+ * Features:
+ *   - Brand logo that links back to the home page
+ *   - Navigation links derived from the `NAV_ITEMS` config array;
+ *     the currently active route is highlighted automatically
+ *   - Authenticated state: shows an avatar chip with the user's
+ *     initials / display name and a Sign Out button
+ *   - Unauthenticated state: shows Log In and Sign Up links
+ *
+ * Authentication state is read from `useAuth()` (AuthContext).
+ * The display name is derived in priority order:
+ *   1. user.user_metadata.name  (set during registration)
+ *   2. the prefix before '@' in the user's email
+ *   3. empty string (avatar chip is still rendered)
+ */
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
+// Central list of navigation destinations.  Update this array to add
+// or remove top-level pages without touching the JSX below.
 const NAV_ITEMS = [
-  { label: 'Home',       path: '/'           },
+  { label: 'Home', path: '/' },
   { label: 'Visualizer', path: '/visualizer' },
-  { label: 'Courses',    path: '/courses'    },
-  { label: 'Notes',      path: '/notes'      },
-  { label: 'Tutorials',  path: '/tutorials'  },
+  { label: 'Courses', path: '/courses' },
+  { label: 'Notes', path: '/notes' },
+  { label: 'Tutorials', path: '/tutorials' },
 ]
 
 export default function Navbar() {
-  const { pathname }   = useLocation()
-  const navigate       = useNavigate()
+  const { pathname } = useLocation()
+  const navigate = useNavigate()
   const { user, signOut } = useAuth()
 
   const handleSignOut = async () => {
@@ -21,7 +42,7 @@ export default function Navbar() {
 
   // Derive display name: prefer user metadata name, fallback to email prefix
   const displayName = user?.user_metadata?.name ?? user?.email?.split('@')[0] ?? ''
-  const initials    = displayName.slice(0, 2).toUpperCase()
+  const initials = displayName.slice(0, 2).toUpperCase()
 
   return (
     <nav className="fixed top-0 inset-x-0 z-50 h-16 flex items-center

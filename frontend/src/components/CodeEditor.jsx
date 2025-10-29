@@ -1,3 +1,25 @@
+/**
+ * CodeEditor.jsx
+ *
+ * Monaco-powered Python code editor with integrated real-time linting.
+ *
+ * Responsibilities:
+ *   - Renders the Monaco Editor configured for Python with a VS-dark theme,
+ *     JetBrains Mono font, glyph margins, and word-wrap enabled.
+ *   - Runs `lintPython` on the code after a short debounce delay (500 ms)
+ *     whenever the code changes, preventing excessive processing on every keystroke.
+ *   - Displays gutter decorations (red / yellow highlights and glyph icons) on
+ *     error and warning lines via `monaco.editor.setModelMarkers`.
+ *   - Renders an `<ErrorExplanation>` panel below the editor listing beginner-
+ *     friendly explanations derived from the linter markers.
+ *
+ * Props:
+ *   code      — the current Python source string (controlled by VisualizerPage)
+ *   onChange  — callback invoked with the new string whenever the user edits
+ *
+ * Exports:
+ *   DEFAULT_CODE — starter snippet loaded on first render
+ */
 import { useRef, useCallback, useEffect, useState } from 'react'
 import Editor from '@monaco-editor/react'
 import { lintPython } from '../lib/pythonLinter'
@@ -16,11 +38,11 @@ print(a, b)
 const LINT_DELAY = 500
 
 export default function CodeEditor({ code, onChange }) {
-  const editorRef      = useRef(null)
-  const monacoRef      = useRef(null)
+  const editorRef = useRef(null)
+  const monacoRef = useRef(null)
   const decorationsRef = useRef([])
-  const timerRef       = useRef(null)
-  const prevHashRef    = useRef('')
+  const timerRef = useRef(null)
+  const prevHashRef = useRef('')
 
   const [explanations, setExplanations] = useState([])
 
@@ -56,16 +78,16 @@ export default function CodeEditor({ code, onChange }) {
       ...errorLines.map(ln => ({
         range: new monaco.Range(ln, 1, ln, 1),
         options: {
-          isWholeLine:          true,
-          className:            'cv-error-line',
+          isWholeLine: true,
+          className: 'cv-error-line',
           glyphMarginClassName: 'cv-error-glyph',
         },
       })),
       ...warningLines.map(ln => ({
         range: new monaco.Range(ln, 1, ln, 1),
         options: {
-          isWholeLine:          true,
-          className:            'cv-warning-line',
+          isWholeLine: true,
+          className: 'cv-warning-line',
           glyphMarginClassName: 'cv-warning-glyph',
         },
       })),
@@ -129,22 +151,22 @@ export default function CodeEditor({ code, onChange }) {
           onMount={handleMount}
           theme="vs-dark"
           options={{
-            minimap:              { enabled: false },
-            fontSize:             14,
-            fontFamily:           '"JetBrains Mono", "Fira Code", Consolas, monospace',
-            fontLigatures:        true,
-            lineNumbers:          'on',
-            lineNumbersMinChars:  3,
+            minimap: { enabled: false },
+            fontSize: 14,
+            fontFamily: '"JetBrains Mono", "Fira Code", Consolas, monospace',
+            fontLigatures: true,
+            lineNumbers: 'on',
+            lineNumbersMinChars: 3,
             scrollBeyondLastLine: false,
-            automaticLayout:      true,
-            padding:              { top: 14, bottom: 14 },
-            renderLineHighlight:  'gutter',
-            cursorBlinking:       'smooth',
-            smoothScrolling:      true,
-            wordWrap:             'on',
-            tabSize:              4,
-            insertSpaces:         true,
-            glyphMargin:          true,
+            automaticLayout: true,
+            padding: { top: 14, bottom: 14 },
+            renderLineHighlight: 'gutter',
+            cursorBlinking: 'smooth',
+            smoothScrolling: true,
+            wordWrap: 'on',
+            tabSize: 4,
+            insertSpaces: true,
+            glyphMargin: true,
           }}
         />
       </div>

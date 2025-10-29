@@ -1,10 +1,32 @@
+/**
+ * AuthContext.jsx
+ *
+ * Provides a React context that exposes Supabase authentication state and
+ * helper methods to every component in the tree.
+ *
+ * Public API (returned by `useAuth()`):
+ *   user     — the current Supabase `User` object, or null when logged out
+ *   session  — the full Supabase `Session` (contains JWT tokens), or null
+ *   loading  — true while the initial session is being hydrated from storage
+ *   signUp   — creates a new account and upserts a row in the `profiles` table
+ *   signIn   — signs in with email + password
+ *   signOut  — invalidates the current session
+ *
+ * Usage:
+ *   // Wrap your app once at the root level
+ *   <AuthProvider>...</AuthProvider>
+ *
+ *   // Consume anywhere inside the tree
+ *   const { user, signIn } = useAuth()
+ */
 import { createContext, useContext, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 
+// Initialise context with null so `useAuth` can detect missing providers.
 const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
-  const [user,    setUser]    = useState(null)
+  const [user, setUser] = useState(null)
   const [session, setSession] = useState(null)
   const [loading, setLoading] = useState(true)
 
@@ -40,7 +62,7 @@ export function AuthProvider({ children }) {
     // Upsert profile row (created_at is set by DB default)
     if (data.user) {
       await supabase.from('profiles').upsert({
-        id:    data.user.id,
+        id: data.user.id,
         name,
         email: data.user.email,
       })
