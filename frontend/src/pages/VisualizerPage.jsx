@@ -24,11 +24,11 @@ import { useAuth } from '../context/AuthContext'
 //   PanelGroup → Group  |  PanelResizeHandle → Separator
 import { Group as PanelGroup, Panel, Separator as PanelResizeHandle } from 'react-resizable-panels'
 
-import Navbar         from '../components/Navbar'
-import Footer         from '../components/Footer'
+import Navbar from '../components/Navbar'
+import Footer from '../components/Footer'
 import CodeEditor, { DEFAULT_CODE } from '../components/CodeEditor'
 import ExecutionPanel from '../components/ExecutionPanel'
-import MemoryView     from '../components/MemoryView'
+import MemoryView from '../components/MemoryView'
 
 // Python FastAPI execution service URL
 const API_URL = 'http://localhost:8000'
@@ -47,8 +47,8 @@ const MIN_DELAY = 80     // ms — fastest execution speed
 function TBtn({ onClick, disabled, title, variant = 'muted', children }) {
   const cls = {
     primary: 'bg-blue-600 text-white border-blue-500 hover:bg-blue-500',
-    danger:  'bg-transparent text-red-400 border-red-800 hover:bg-red-900/30',
-    muted:   'bg-transparent text-gray-300 border-[#374151] hover:bg-[#1F2937] hover:text-white',
+    danger: 'bg-transparent text-red-400 border-red-800 hover:bg-red-900/30',
+    muted: 'bg-transparent text-gray-300 border-[#374151] hover:bg-[#1F2937] hover:text-white',
   }[variant]
 
   return (
@@ -69,8 +69,8 @@ function TBtn({ onClick, disabled, title, variant = 'muted', children }) {
    VisualizerPage — main exported component
 ───────────────────────────────────────────────────────────────── */
 export default function VisualizerPage() {
-  const location   = useLocation()
-  const { user }   = useAuth()
+  const location = useLocation()
+  const { user } = useAuth()
 
   // ── Execution state ──────────────────────────────────────────
   // code          – current text in the Monaco editor
@@ -82,15 +82,15 @@ export default function VisualizerPage() {
   // output        – stdout captured from the user's code (print statements)
   // error         – error message string when execution fails
   // stale         – true when the editor code has changed since the last run
-  const [code,             setCode]             = useState(() => location.state?.code ?? DEFAULT_CODE)
-  const [steps,            setSteps]            = useState([])
+  const [code, setCode] = useState(() => location.state?.code ?? DEFAULT_CODE)
+  const [steps, setSteps] = useState([])
   const [currentStepIndex, setCurrentStepIndex] = useState(-1)
-  const [isRunning,        setIsRunning]        = useState(false)
-  const [isLoading,        setIsLoading]        = useState(false)
-  const [speed,            setSpeed]            = useState(700)
-  const [output,           setOutput]           = useState('')
-  const [error,            setError]            = useState(null)
-  const [stale,            setStale]            = useState(false)
+  const [isRunning, setIsRunning] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [speed, setSpeed] = useState(700)
+  const [output, setOutput] = useState('')
+  const [error, setError] = useState(null)
+  const [stale, setStale] = useState(false)
 
   // editorVisible – toggles the Monaco Editor panel on/off
   const [editorVisible, setEditorVisible] = useState(true)
@@ -104,7 +104,7 @@ export default function VisualizerPage() {
   // intervalRef  – holds the setInterval ID for auto-play; cleared on pause/reset
   // consoleRef   – DOM ref used to scroll the console into view on error
   const intervalRef = useRef(null)
-  const consoleRef  = useRef(null)
+  const consoleRef = useRef(null)
 
   // ── Derived values ───────────────────────────────────────────
   // currentMemory – variables at the current step (shown in MemoryView)
@@ -113,13 +113,13 @@ export default function VisualizerPage() {
   // atStart/atEnd – boundary checks to disable step-back / step-forward buttons
   // sliderVal     – converts the ms delay back to a 0-100 slider position
   const currentMemory = currentStepIndex >= 0 ? (steps[currentStepIndex]?.memory ?? {}) : {}
-  const prevMemory    = currentStepIndex >  0 ? (steps[currentStepIndex - 1]?.memory ?? {}) : {}
-  const currentScope  = currentStepIndex >= 0 ? (steps[currentStepIndex]?.scope ?? 'global') : 'global'
-  const callStack     = currentStepIndex >= 0 ? (steps[currentStepIndex]?.call_stack ?? []) : []
-  const progress      = steps.length > 0 ? ((currentStepIndex + 1) / steps.length) * 100 : 0
-  const atStart       = currentStepIndex <= 0
-  const atEnd         = currentStepIndex >= steps.length - 1
-  const sliderVal     = Math.round(((MAX_DELAY - speed) / (MAX_DELAY - MIN_DELAY)) * 100)
+  const prevMemory = currentStepIndex > 0 ? (steps[currentStepIndex - 1]?.memory ?? {}) : {}
+  const currentScope = currentStepIndex >= 0 ? (steps[currentStepIndex]?.scope ?? 'global') : 'global'
+  const callStack = currentStepIndex >= 0 ? (steps[currentStepIndex]?.call_stack ?? []) : []
+  const progress = steps.length > 0 ? ((currentStepIndex + 1) / steps.length) * 100 : 0
+  const atStart = currentStepIndex <= 0
+  const atEnd = currentStepIndex >= steps.length - 1
+  const sliderVal = Math.round(((MAX_DELAY - speed) / (MAX_DELAY - MIN_DELAY)) * 100)
 
   // Mark steps stale whenever the editor content changes after a run.
   // This prompts the user to re-run before stepping.
@@ -150,14 +150,14 @@ export default function VisualizerPage() {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return
       if (e.target.closest?.('.monaco-editor')) return   // let Monaco handle its own keys
 
-      if (e.code === 'Space')      { e.preventDefault(); isRunning ? handlePause() : handleRun() }
-      if (e.code === 'ArrowRight') { e.preventDefault(); if (!atEnd)   handleNext() }
-      if (e.code === 'ArrowLeft')  { e.preventDefault(); if (!atStart) handlePrev() }
+      if (e.code === 'Space') { e.preventDefault(); isRunning ? handlePause() : handleRun() }
+      if (e.code === 'ArrowRight') { e.preventDefault(); if (!atEnd) handleNext() }
+      if (e.code === 'ArrowLeft') { e.preventDefault(); if (!atStart) handlePrev() }
       if (e.code === 'KeyR' && e.ctrlKey) { e.preventDefault(); handleReset() }
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isRunning, atStart, atEnd, steps.length, currentStepIndex])
 
   // ── Fetch execution steps from backend ───────────────────────
@@ -181,8 +181,8 @@ export default function VisualizerPage() {
       if (user) {
         supabase.from('execution_history').insert({
           user_id: user.id,
-          code:    src,
-          output:  capturedOutput,
+          code: src,
+          output: capturedOutput,
         }).then(({ error: dbErr }) => {
           if (dbErr) console.warn('Could not save execution history:', dbErr.message)
         })
@@ -216,8 +216,8 @@ export default function VisualizerPage() {
   const handlePause = () => setIsRunning(false)
 
   // Clamp to valid index range to avoid out-of-bounds access.
-  const handleNext  = () => setCurrentStepIndex(i => Math.min(i + 1, steps.length - 1))
-  const handlePrev  = () => setCurrentStepIndex(i => Math.max(i - 1, 0))
+  const handleNext = () => setCurrentStepIndex(i => Math.min(i + 1, steps.length - 1))
+  const handlePrev = () => setCurrentStepIndex(i => Math.max(i - 1, 0))
 
   const handleReset = () => {
     setIsRunning(false); setCurrentStepIndex(-1); setSteps([])
@@ -229,8 +229,8 @@ export default function VisualizerPage() {
     if (!user || saveStatus === 'saving') return
     setSaveStatus('saving')
     const { error: dbErr } = await supabase.from('saved_codes').insert({
-      user_id:  user.id,
-      code:     code,
+      user_id: user.id,
+      code: code,
       language: 'python',
     })
     if (dbErr) {
@@ -280,7 +280,7 @@ export default function VisualizerPage() {
     <div className="min-h-screen bg-vs-bg text-vs-text">
       <Navbar />
 
-        {/* Main content starts below the fixed navbar (pt-16 = 64 px) */}
+      {/* Main content starts below the fixed navbar (pt-16 = 64 px) */}
       <div className="pt-16 flex flex-col">
 
         {/* ──────────────────────────────────────────────────────
@@ -299,12 +299,12 @@ export default function VisualizerPage() {
               className={`flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md border
                           font-mono transition-colors duration-150 shrink-0
                           ${editorVisible
-                            ? 'bg-blue-600/15 border-blue-600/40 text-blue-400'
-                            : 'bg-transparent border-[#374151] text-gray-400 hover:text-white hover:bg-[#1F2937]'}`}
+                  ? 'bg-blue-600/15 border-blue-600/40 text-blue-400'
+                  : 'bg-transparent border-[#374151] text-gray-400 hover:text-white hover:bg-[#1F2937]'}`}
             >
               {/* Code brackets icon */}
               <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none"
-                   stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" />
               </svg>
               {editorVisible ? 'Hide Editor' : 'Show Editor'}
@@ -319,15 +319,15 @@ export default function VisualizerPage() {
               className={`flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md border
                           font-mono transition-colors duration-150 shrink-0 disabled:opacity-50
                           ${saveStatus === 'saved'
-                            ? 'bg-green-600/15 border-green-600/40 text-green-400'
-                            : saveStatus === 'error'
-                              ? 'bg-red-600/15 border-red-600/40 text-red-400'
-                              : 'bg-transparent border-[#374151] text-gray-400 hover:text-white hover:bg-[#1F2937]'}`}
+                  ? 'bg-green-600/15 border-green-600/40 text-green-400'
+                  : saveStatus === 'error'
+                    ? 'bg-red-600/15 border-red-600/40 text-red-400'
+                    : 'bg-transparent border-[#374151] text-gray-400 hover:text-white hover:bg-[#1F2937]'}`}
             >
               {saveStatus === 'saving' ? '💾 Saving…'
-               : saveStatus === 'saved'  ? '✓ Saved!'
-               : saveStatus === 'error'  ? '✕ Failed'
-               : '💾 Save Code'}
+                : saveStatus === 'saved' ? '✓ Saved!'
+                  : saveStatus === 'error' ? '✕ Failed'
+                    : '💾 Save Code'}
             </button>
 
             <div className="w-px h-4 bg-[#374151] shrink-0" />
@@ -386,7 +386,7 @@ export default function VisualizerPage() {
                 </TBtn>
               ) : (
                 <TBtn onClick={handleRun} disabled={isLoading} variant="primary"
-                      title="Run / Resume (Space)">
+                  title="Run / Resume (Space)">
                   {isLoading ? '⏳ Running…' : '▶ Run'}
                 </TBtn>
               )}
@@ -416,10 +416,7 @@ export default function VisualizerPage() {
                 </span>
               </div>
 
-              {/* Keyboard hint — hidden on small screens */}
-              <span className="text-xs text-gray-600 font-mono hidden xl:block ml-1">
-                Space · ← →
-              </span>
+
             </div>
 
           </div>
@@ -532,8 +529,8 @@ export default function VisualizerPage() {
             <div className="panel-header">
               <span className="font-mono text-[11px]">Console Output</span>
               <div className="flex items-center gap-2">
-                {error             && <span className="text-red-400  text-[10px] font-mono">● Error</span>}
-                {output && !error  && <span className="text-green-400 text-[10px] font-mono">● Output</span>}
+                {error && <span className="text-red-400  text-[10px] font-mono">● Error</span>}
+                {output && !error && <span className="text-green-400 text-[10px] font-mono">● Output</span>}
                 {!error && !output && <span className="text-gray-600 text-[10px] font-mono">● Idle</span>}
               </div>
             </div>
