@@ -351,7 +351,7 @@ export default function GuidePage() {
       <section className="relative z-10 pt-28 pb-16 px-4 text-center">
         <div className="max-w-3xl mx-auto">
           <motion.h1
-            className="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight"
+            className="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight mb-5"
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.55, delay: 0.1 }}
@@ -359,6 +359,18 @@ export default function GuidePage() {
             <span className="text-white">CodeVision </span>
             <span className="text-blue-400">User Guide</span>
           </motion.h1>
+
+          <motion.p
+            className="text-gray-400 text-lg leading-relaxed max-w-2xl mx-auto"
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.25 }}
+          >
+            Everything you need to know to get started with CodeVision —
+            from writing your first program to understanding{' '}
+            <span className="text-blue-400">step-by-step execution</span>{' '}
+            and memory visualization.
+          </motion.p>
         </div>
       </section>
 
