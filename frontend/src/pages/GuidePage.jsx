@@ -375,7 +375,7 @@ export default function GuidePage() {
       </section>
 
       {/* ── Section 1: What is CodeVision? ──────────────────────── */}
-      <section id="what-is" className="relative z-10 py-16 px-4 border-t border-[#1F2937]">
+      <section id="what-is" className="relative z-10 py-16 px-4">
         <div className="max-w-5xl mx-auto">
           <SectionHeading
             badge="What is CodeVision?"
@@ -450,7 +450,7 @@ export default function GuidePage() {
       </section>
 
       {/* ── Section 2: How to Use ─────────────────────────────── */}
-      <section id="how-to-use" className="relative z-10 py-16 px-4 border-t border-[#1F2937] bg-[#111827]/40">
+      <section id="how-to-use" className="relative z-10 py-16 px-4">
         <div className="max-w-5xl mx-auto">
           <SectionHeading
             badge="How to Use"
@@ -487,7 +487,7 @@ export default function GuidePage() {
       </section>
 
       {/* ── Section 3: Features ───────────────────────────────── */}
-      <section id="features" className="relative z-10 py-16 px-4 border-t border-[#1F2937]">
+      <section id="features" className="relative z-10 py-16 px-4">
         <div className="max-w-6xl mx-auto">
           <SectionHeading
             badge="Features"
@@ -505,7 +505,7 @@ export default function GuidePage() {
       </section>
 
       {/* ── Section 4: Why Use It ─────────────────────────────── */}
-      <section id="benefits" className="relative z-10 py-16 px-4 border-t border-[#1F2937] bg-[#111827]/40">
+      <section id="benefits" className="relative z-10 py-16 px-4">
         <div className="max-w-5xl mx-auto">
           <SectionHeading
             badge="Why Use It"
@@ -576,7 +576,7 @@ export default function GuidePage() {
       </section>
 
       {/* ── Section 5: Tips ───────────────────────────────────── */}
-      <section id="tips" className="relative z-10 py-16 px-4 border-t border-[#1F2937]">
+      <section id="tips" className="relative z-10 py-16 px-4">
         <div className="max-w-5xl mx-auto">
           <SectionHeading
             badge="Tips"
@@ -594,7 +594,7 @@ export default function GuidePage() {
       </section>
 
       {/* ── Section 6: Who Should Use It ─────────────────────── */}
-      <section id="who" className="relative z-10 py-16 px-4 border-t border-[#1F2937] bg-[#111827]/40">
+      <section id="who" className="relative z-10 py-16 px-4">
         <div className="max-w-5xl mx-auto">
           <SectionHeading
             badge="Who Is It For"
@@ -612,7 +612,7 @@ export default function GuidePage() {
       </section>
 
       {/* ── FAQ ───────────────────────────────────────────────── */}
-      <section className="relative z-10 py-16 px-4 border-t border-[#1F2937]">
+      <section className="relative z-10 py-16 px-4">
         <div className="max-w-3xl mx-auto">
           <SectionHeading
             badge="FAQ"
