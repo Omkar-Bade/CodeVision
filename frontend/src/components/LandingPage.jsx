@@ -31,7 +31,7 @@ const TERMINAL_LINES = [
 ]
 
 function TerminalTyper() {
-  const [done, setDone]       = useState([])
+  const [done, setDone] = useState([])
   const [lineIdx, setLineIdx] = useState(0)
   const [charIdx, setCharIdx] = useState(0)
 
@@ -206,6 +206,15 @@ export default function LandingPage() {
               <span>▶</span> Start Visualizing
             </button>
             <button
+              onClick={() => navigate('/guide')}
+              className="inline-flex items-center justify-center gap-2 px-7 py-3 rounded-lg
+                         bg-blue-600/10 border border-blue-600/40 text-blue-400
+                         hover:bg-blue-600/20 hover:border-blue-500/60 hover:text-blue-300
+                         font-semibold text-sm transition-colors duration-150"
+            >
+              📖 View Guide
+            </button>
+            <button
               onClick={() => navigate('/notes')}
               className="inline-flex items-center justify-center gap-2 px-7 py-3 rounded-lg
                          border border-[#374151] text-gray-300 hover:bg-[#1F2937] hover:text-white
@@ -250,6 +259,56 @@ export default function LandingPage() {
               <FeatureCard key={f.title} {...f} delay={i * 0.08} />
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* ── Guide Banner ──────────────────────────────────────── */}
+      <section className="relative z-10 py-16 px-4">
+        <div className="max-w-5xl mx-auto">
+          <motion.div
+            className="bg-[#111827] border border-blue-600/25 rounded-2xl p-8 md:p-10
+                       flex flex-col md:flex-row items-center gap-6 md:gap-10"
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+          >
+            {/* Icon */}
+            <div className="shrink-0 w-16 h-16 rounded-2xl bg-blue-600/15 border border-blue-600/30
+                            flex items-center justify-center text-3xl">
+              📖
+            </div>
+
+            {/* Text */}
+            <div className="flex-1 text-center md:text-left">
+              <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full
+                             bg-blue-600/10 border border-blue-600/30 text-blue-400
+                             text-[11px] font-mono mb-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+                New to CodeVision?
+              </div>
+              <h2 className="text-xl md:text-2xl font-bold text-white mb-2">
+                Read the User Guide first
+              </h2>
+              <p className="text-gray-400 text-sm leading-relaxed max-w-xl">
+                Not sure where to start? Our step-by-step guide covers everything — from
+                writing your first program to understanding memory visualization,
+                execution controls, and beginner tips.
+              </p>
+            </div>
+
+            {/* CTA */}
+            <div className="shrink-0">
+              <button
+                onClick={() => navigate('/guide')}
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg
+                           bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm
+                           transition-colors duration-150 whitespace-nowrap"
+              >
+                View Guidance →
+              </button>
+            </div>
+          </motion.div>
         </div>
       </section>
 
