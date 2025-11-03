@@ -24,6 +24,7 @@ import { useAuth } from '../context/AuthContext'
 // or remove top-level pages without touching the JSX below.
 const NAV_ITEMS = [
   { label: 'Home', path: '/' },
+  { label: 'Guide', path: '/guide' },
   { label: 'Visualizer', path: '/visualizer' },
   { label: 'Courses', path: '/courses' },
   { label: 'Notes', path: '/notes' },

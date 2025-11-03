@@ -11,6 +11,7 @@
  *     /             → LandingPage
  *     /login        → LoginPage
  *     /register     → RegisterPage
+ *     /guide        → GuidePage
  *
  *   Protected  (redirect to /login if unauthenticated)
  *     /visualizer   → VisualizerPage   (main code execution UI)
@@ -31,6 +32,7 @@ import Notes from './components/Notes'
 import Tutorials from './components/Tutorials'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
+import GuidePage from './pages/GuidePage'
 
 export default function App() {
   return (
@@ -41,6 +43,7 @@ export default function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/guide" element={<GuidePage />} />
 
           {/* Protected routes — require authentication */}
           <Route path="/visualizer" element={
