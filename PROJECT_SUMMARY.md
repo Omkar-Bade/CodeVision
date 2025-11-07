@@ -53,8 +53,8 @@ This makes learning interactive and visual.
 | Layer | Technologies |
 |-------|--------------|
 | **Frontend** | React, Tailwind CSS, Monaco Editor, Framer Motion |
-| **Backend** | Node.js (API), Python (execution), Uvicorn |
-| **Database** | Supabase (PostgreSQL) — auth, user data, saved code |
+| **Backend** | Python, FastAPI, Uvicorn, `sys.settrace` execution engine |
+| **Database** | Supabase (PostgreSQL) — auth, user profiles, saved code, execution history |
 
 ---
 
@@ -62,10 +62,10 @@ This makes learning interactive and visual.
 
 ```
 Frontend (React, Tailwind, Monaco)
-        ↓
-Backend (Node.js API + Python execution engine)
-        ↓
-Database (Supabase PostgreSQL)
+        ↓  REST API (POST /execute)
+Backend (Python FastAPI + sys.settrace engine)
+        ↓  Supabase JS Client
+Database (Supabase PostgreSQL — auth, profiles, saved code)
 ```
 
 ---
