@@ -37,7 +37,7 @@ print(a, b)
 
 const LINT_DELAY = 500
 
-export default function CodeEditor({ code, onChange }) {
+export default function CodeEditor({ code, onChange, language = 'python' }) {
   const editorRef = useRef(null)
   const monacoRef = useRef(null)
   const decorationsRef = useRef([])
@@ -52,6 +52,13 @@ export default function CodeEditor({ code, onChange }) {
     if (!editor || !monaco) return
     const model = editor.getModel()
     if (!model) return
+
+    if (language !== 'python') {
+      monaco.editor.setModelMarkers(model, 'python-lint', [])
+      setExplanations([])
+      decorationsRef.current = editor.deltaDecorations(decorationsRef.current, [])
+      return
+    }
 
     const markers = lintPython(value)
 
@@ -127,7 +134,7 @@ export default function CodeEditor({ code, onChange }) {
       <div className="flex items-center border-b border-[#1F2937] bg-[#0d1117] px-3 py-1.5 shrink-0">
         <div className="tab-item active flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-green-500" />
-          <span>main.py</span>
+          <span>{language === 'java' ? 'Main.java' : 'main.py'}</span>
         </div>
         <div className="ml-auto flex items-center gap-2 text-[11px] text-gray-500 font-mono">
           {explanations.length > 0 && (
@@ -137,7 +144,7 @@ export default function CodeEditor({ code, onChange }) {
             </span>
           )}
           <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />
-          <span>Python 3 · Monaco</span>
+          <span>{language === 'java' ? 'Java 17 · Monaco' : 'Python 3 · Monaco'}</span>
         </div>
       </div>
 
@@ -145,7 +152,7 @@ export default function CodeEditor({ code, onChange }) {
       <div className="flex-1 min-h-0">
         <Editor
           height="100%"
-          defaultLanguage="python"
+          language={language}
           value={code}
           onChange={handleChange}
           onMount={handleMount}
