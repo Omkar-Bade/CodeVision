@@ -134,7 +134,7 @@ export default function CodeEditor({ code, onChange, language = 'python' }) {
       <div className="flex items-center border-b border-[#1F2937] bg-[#0d1117] px-3 py-1.5 shrink-0">
         <div className="tab-item active flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-green-500" />
-          <span>{language === 'java' ? 'Main.java' : 'main.py'}</span>
+          <span>main.py</span>
         </div>
         <div className="ml-auto flex items-center gap-2 text-[11px] text-gray-500 font-mono">
           {explanations.length > 0 && (
@@ -144,7 +144,7 @@ export default function CodeEditor({ code, onChange, language = 'python' }) {
             </span>
           )}
           <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />
-          <span>{language === 'java' ? 'Java 17 · Monaco' : 'Python 3 · Monaco'}</span>
+          <span>Python 3 · Monaco</span>
         </div>
       </div>
 
