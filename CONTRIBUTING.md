@@ -74,9 +74,3 @@ Open an issue with:
 - **Steps to reproduce**: How can we reproduce it?
 - **Expected vs actual**: What did you expect vs what happened?
 - **Environment**: OS, Node/Python versions
-
-## Questions?
-
-Feel free to open an issue for discussion.
-
-Thank you for contributing!
