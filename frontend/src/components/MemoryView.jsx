@@ -16,6 +16,7 @@
  *   }
  */
 
+import { memo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 // ── Helpers ────────────────────────────────────────────────────────
@@ -113,7 +114,18 @@ function CallStack({ callStack }) {
 
 // ── MemoryBox ─────────────────────────────────────────────────────
 
-function MemoryBox({ name, entry, isNew, isChanged }) {
+// Custom comparator: skip re-render when nothing about this variable changed.
+// JSON.stringify is used only here (once per comparison) rather than per-render.
+function memoryBoxEqual(prev, next) {
+  return (
+    prev.name      === next.name &&
+    prev.isNew     === next.isNew &&
+    prev.isChanged === next.isChanged &&
+    JSON.stringify(prev.entry) === JSON.stringify(next.entry)
+  )
+}
+
+const MemoryBox = memo(function MemoryBox({ name, entry, isNew, isChanged }) {
   const value      = entry?.value      ?? entry
   const sizeBytes  = entry?.size_bytes ?? null
   const typeName   = entry?.type       ?? (Array.isArray(value) ? 'list' : typeof value)
@@ -190,7 +202,7 @@ function MemoryBox({ name, entry, isNew, isChanged }) {
       </div>
     </motion.div>
   )
-}
+}, memoryBoxEqual)
 
 // ── MemoryDiagram ──────────────────────────────────────────────────
 

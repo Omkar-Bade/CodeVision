@@ -23,7 +23,7 @@
  * Annotation types (defined in ANNOTATION_STYLES):
  *   call, return, input, type_cast, builtin, exception
  */
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useMemo, memo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 const ANNOTATION_STYLES = {
@@ -43,8 +43,10 @@ const EVENT_LABELS = {
   exception: 'Error',
 }
 
-export default function ExecutionPanel({ code, steps, currentStepIndex }) {
-  const codeLines = (code || '').split('\n')
+function ExecutionPanelInner({ code, steps, currentStepIndex }) {
+  // Memoize line splitting — only recompute when code string changes
+  const codeLines = useMemo(() => (code || '').split('\n'), [code])
+
   const totalSteps = steps.length
   const step = currentStepIndex >= 0 ? steps[currentStepIndex] : null
   const activeLine = step?.line ?? null
@@ -62,8 +64,14 @@ export default function ExecutionPanel({ code, steps, currentStepIndex }) {
     }
   }, [activeLine])
 
-  const wasExecuted = (lineNum) =>
-    steps.slice(0, currentStepIndex + 1).some(s => s.line === lineNum)
+  // Build a Set of executed line numbers — O(1) lookup instead of O(n) slice+some per line.
+  // Recomputes only when steps array or currentStepIndex changes.
+  const executedLines = useMemo(
+    () => new Set(steps.slice(0, currentStepIndex + 1).map(s => s.line)),
+    [steps, currentStepIndex]
+  )
+
+  const wasExecuted = (lineNum) => executedLines.has(lineNum)
 
   return (
     <div className="h-full flex flex-col">
@@ -201,3 +209,9 @@ export default function ExecutionPanel({ code, steps, currentStepIndex }) {
     </div>
   )
 }
+
+// Wrap in React.memo so the panel only re-renders when its own props change.
+// This prevents re-renders triggered by VisualizerPage state (e.g. speed slider,
+// save status) that don't affect the execution view at all.
+const ExecutionPanel = memo(ExecutionPanelInner)
+export default ExecutionPanel
