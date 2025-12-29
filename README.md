@@ -116,8 +116,6 @@ CodeVision/
 │   │   ├── App.jsx                 # Route tree + AuthProvider wrapper
 │   │   ├── main.jsx                # React entry point
 │   │   ├── index.css               # Global styles + Tailwind theme
-│   │   ├── api/
-│   │   │   └── index.js            # Axios instance for backend calls
 │   │   ├── context/
 │   │   │   └── AuthContext.jsx     # Supabase auth state (signUp/signIn/signOut)
 │   │   ├── lib/
@@ -137,7 +135,6 @@ CodeVision/
 │   │       ├── CodeEditor.jsx      # Monaco Editor + linter integration
 │   │       ├── ExecutionPanel.jsx  # Code viewer with line highlighting
 │   │       ├── MemoryView.jsx      # Variable memory + call stack display
-│   │       ├── Controls.jsx        # Playback controls
 │   │       ├── ErrorExplanation.jsx
 │   │       ├── Courses.jsx         # Python courses page
 │   │       ├── Notes.jsx           # Concept notes page
