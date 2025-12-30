@@ -1,0 +1,106 @@
+Data Types & Type Conversion
+
+name = "Omkar"
+age = "20"
+cgpa = "8.00"
+
+age = int(age)
+cgpa = float(cgpa)
+
+print(name)
+print(age)
+print(cgpa)
+print(type(age))
+print(type(cgpa))
+
+2.Variables & Arithmetic
+a = 10
+b = 20
+
+sum = a + b
+difference = b - a
+product = a * b
+division = b / a
+
+print("Sum:", sum)
+print("Difference:", difference)
+print("Product:", product)
+print("Division:", division)
+
+3 if else
+
+marks = 20
+
+if marks >= 40:
+    print("Pass")
+else:
+    print("Fail")
+
+4. nested if else
+
+age = 20
+citizen = False
+
+if age >= 18:
+    if citizen:
+        print("Eligible")
+    else:
+        print("Not Citizen")
+else:
+    print("Minor")
+
+5.Classes
+
+class Student:
+
+    def __init__(self, name):
+        self.name = name
+
+def display(student):
+    print(student.name)
+
+s = Student("Omkar")
+
+display(s)
+
+6. comprihensive function test
+
+def calculate_total(numbers):
+    total = 0
+
+    for number in numbers:
+        total += number
+
+    return total
+
+
+def calculate_average(numbers):
+    total = calculate_total(numbers)
+    average = total / len(numbers)
+
+    return average
+
+
+def grade(average):
+    if average >= 75:
+        return "A"
+    elif average >= 60:
+        return "B"
+    elif average >= 40:
+        return "C"
+    else:
+        return "Fail"
+
+
+def display_result(numbers):
+    average = calculate_average(numbers)
+    student_grade = grade(average)
+
+    print("Marks:", numbers)
+    print("Average:", average)
+    print("Grade:", student_grade)
+
+
+marks = [85, 90, 70, 65, 80]
+
+display_result(marks)

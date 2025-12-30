@@ -5,14 +5,11 @@
  *
  * Flow:
  *   1. User fills in email and password and submits the form.
- *   2. `signIn` from AuthContext calls Supabase's signInWithPassword API.
- *   3. On success the user is redirected to the Landing Page ("/").
+ *   2. `signIn` from AuthContext calls POST /auth/login on the FastAPI backend.
+ *   3. On success the access + refresh tokens are stored and the user is
+ *      redirected to the Landing Page ("/").
  *   4. On failure (wrong credentials, network error, etc.) an inline
  *      error message is shown above the form.
- *
- * After a successful sign-in, Supabase persists the session in localStorage
- * and `AuthContext` automatically updates the `user` state — no manual
- * token handling is required.
  */
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
