@@ -13,7 +13,7 @@
  *
  * Authentication state is read from `useAuth()` (AuthContext).
  * The display name is derived in priority order:
- *   1. user.user_metadata.name  (set during registration)
+ *   1. user.full_name  (set during registration, from the MySQL users table)
  *   2. the prefix before '@' in the user's email
  *   3. empty string (avatar chip is still rendered)
  */
@@ -41,8 +41,8 @@ export default function Navbar() {
     navigate('/login')
   }
 
-  // Derive display name: prefer user metadata name, fallback to email prefix
-  const displayName = user?.user_metadata?.name ?? user?.email?.split('@')[0] ?? ''
+  // Derive display name: prefer full_name from MySQL users table, fallback to email prefix
+  const displayName = user?.full_name ?? user?.email?.split('@')[0] ?? ''
   const initials = displayName.slice(0, 2).toUpperCase()
 
   return (

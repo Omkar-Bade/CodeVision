@@ -1,89 +1,144 @@
 /**
- * AuthContext.jsx
+ * AuthContext.jsx — Authentication state and helpers for CodeVision.
  *
- * Provides a React context that exposes Supabase authentication state and
- * helper methods to every component in the tree.
+ * Replaces the previous Supabase-based implementation with direct calls to
+ * the FastAPI /auth/* endpoints.
  *
- * Public API (returned by `useAuth()`):
- *   user     — the current Supabase `User` object, or null when logged out
- *   session  — the full Supabase `Session` (contains JWT tokens), or null
- *   loading  — true while the initial session is being hydrated from storage
- *   signUp   — creates a new account and upserts a row in the `profiles` table
- *   signIn   — signs in with email + password
- *   signOut  — invalidates the current session
+ * Public API (returned by useAuth()) — intentionally identical to the old
+ * Supabase-based shape so LoginPage, RegisterPage, and Navbar need minimal
+ * or no changes:
  *
- * Usage:
- *   // Wrap your app once at the root level
- *   <AuthProvider>...</AuthProvider>
+ *   user     — { id, email, full_name } or null
+ *   loading  — true while the initial silent refresh is in progress
+ *   signUp({ name, email, password })  — register + auto-login
+ *   signIn({ email, password })        — login
+ *   signOut()                          — logout + clear tokens
  *
- *   // Consume anywhere inside the tree
- *   const { user, signIn } = useAuth()
+ * Token storage:
+ *   Access token  — in-memory module variable inside api/index.js (setAccessToken).
+ *                   Never written to localStorage or sessionStorage.
+ *   Refresh token — sessionStorage['cv_rt'].  Cleared on tab close or explicit
+ *                   sign-out.  See api/index.js for the httpOnly cookie upgrade path.
+ *
+ * Session restoration:
+ *   On mount, AuthContext checks sessionStorage for a refresh token and calls
+ *   POST /auth/refresh.  If successful, the session is restored silently.
+ *   loading=true until this check completes (replaces Supabase's getSession).
  */
-import { createContext, useContext, useEffect, useState } from 'react'
-import { supabase } from '../lib/supabase'
 
-// Initialise context with null so `useAuth` can detect missing providers.
+import { createContext, useContext, useEffect, useState, useCallback } from 'react'
+import api, { setAccessToken, setSignOutCallback } from '../api'
+
 const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null)
-  const [session, setSession] = useState(null)
+  const [user,    setUser]    = useState(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    // Load existing session on mount
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-      setUser(session?.user ?? null)
-      setLoading(false)
-    })
+  // ── Internal helpers ─────────────────────────────────────────────────────
 
-    // Listen for auth state changes (login, logout, token refresh)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session)
-      setUser(session?.user ?? null)
-      setLoading(false)
-    })
+  /**
+   * Store a token pair: access token in memory, refresh token in sessionStorage.
+   * Then fetch the user profile from /auth/me to populate `user` state.
+   */
+  const _storeTokensAndFetchUser = useCallback(async (accessToken, refreshToken) => {
+    setAccessToken(accessToken)
+    sessionStorage.setItem('cv_rt', refreshToken)
 
-    return () => subscription.unsubscribe()
+    const { data } = await api.get('/auth/me')
+    setUser(data)  // { id, email, full_name, created_at }
   }, [])
 
-  // ── Sign Up ──────────────────────────────────────────────────
-  // Creates the Supabase Auth user, then upserts a row in `profiles`
-  // so the display name is stored alongside the auth record.
-  const signUp = async ({ name, email, password }) => {
-    const { data, error } = await supabase.auth.signUp({
+  /**
+   * Clear all auth state.  Called on explicit sign-out or when the
+   * interceptor determines that the refresh token is invalid/expired.
+   */
+  const _clearSession = useCallback(() => {
+    setAccessToken(null)
+    sessionStorage.removeItem('cv_rt')
+    setUser(null)
+  }, [])
+
+  // Register the clear-session callback with the Axios interceptor so it can
+  // sign the user out when a refresh attempt fails (e.g. on a different tab).
+  useEffect(() => {
+    setSignOutCallback(_clearSession)
+  }, [_clearSession])
+
+  // ── Session restoration on mount ─────────────────────────────────────────
+
+  useEffect(() => {
+    const restore = async () => {
+      const storedRefreshToken = sessionStorage.getItem('cv_rt')
+
+      if (!storedRefreshToken) {
+        setLoading(false)
+        return
+      }
+
+      try {
+        const { data } = await api.post('/auth/refresh', {
+          refresh_token: storedRefreshToken,
+        })
+        await _storeTokensAndFetchUser(data.access_token, data.refresh_token)
+      } catch {
+        // Refresh token is expired or revoked — clear state silently
+        _clearSession()
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    restore()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Public auth methods ──────────────────────────────────────────────────
+
+  /**
+   * Register a new account.
+   * On success, tokens are issued immediately so the user is logged in
+   * without a separate login step.
+   * Throws on API error (LoginPage/RegisterPage catch and display the message).
+   */
+  const signUp = useCallback(async ({ name, email, password }) => {
+    const { data } = await api.post('/auth/register', {
+      full_name: name,
       email,
       password,
-      options: { data: { name } },   // stored in auth.users.raw_user_meta_data
     })
-    if (error) throw error
+    await _storeTokensAndFetchUser(data.access_token, data.refresh_token)
+  }, [_storeTokensAndFetchUser])
 
-    // Upsert profile row (created_at is set by DB default)
-    if (data.user) {
-      await supabase.from('profiles').upsert({
-        id: data.user.id,
-        name,
-        email: data.user.email,
-      })
+  /**
+   * Sign in with email + password.
+   * Throws on wrong credentials (message from API: "Incorrect email or password.").
+   */
+  const signIn = useCallback(async ({ email, password }) => {
+    const { data } = await api.post('/auth/login', { email, password })
+    await _storeTokensAndFetchUser(data.access_token, data.refresh_token)
+  }, [_storeTokensAndFetchUser])
+
+  /**
+   * Sign out.  Revokes the refresh token on the server (best-effort),
+   * then clears local state.  The access token expires on its own.
+   */
+  const signOut = useCallback(async () => {
+    const storedRefreshToken = sessionStorage.getItem('cv_rt')
+    try {
+      if (storedRefreshToken) {
+        // Best-effort — do not block sign-out on a network failure
+        await api.post('/auth/logout', { refresh_token: storedRefreshToken })
+      }
+    } catch {
+      // Ignore errors (network down, token already revoked, etc.)
+    } finally {
+      _clearSession()
     }
-    return data
-  }
+  }, [_clearSession])
 
-  // ── Sign In ───────────────────────────────────────────────────
-  const signIn = async ({ email, password }) => {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) throw error
-    return data
-  }
+  // ── Context value ────────────────────────────────────────────────────────
 
-  // ── Sign Out ──────────────────────────────────────────────────
-  const signOut = async () => {
-    const { error } = await supabase.auth.signOut()
-    if (error) throw error
-  }
-
-  const value = { user, session, loading, signUp, signIn, signOut }
+  const value = { user, loading, signUp, signIn, signOut }
 
   return (
     <AuthContext.Provider value={value}>
@@ -94,6 +149,6 @@ export function AuthProvider({ children }) {
 
 export function useAuth() {
   const ctx = useContext(AuthContext)
-  if (!ctx) throw new Error('useAuth must be used inside AuthProvider')
+  if (!ctx) throw new Error('useAuth must be used inside <AuthProvider>')
   return ctx
 }

@@ -17,7 +17,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import axios from 'axios'
-import { supabase } from '../lib/supabase'
+import api from '../api'
 import { useAuth } from '../context/AuthContext'
 
 // react-resizable-panels v4 renamed its exports:
@@ -101,6 +101,11 @@ export default function VisualizerPage() {
 
   // inputValues – comma-separated string of values fed to input() calls during execution
   const [inputValues, setInputValues] = useState('')
+
+  // savedCodes modal state
+  const [showCodesModal, setShowCodesModal] = useState(false)
+  const [savedCodes, setSavedCodes]         = useState([])
+  const [codesLoading, setCodesLoading]     = useState(false)
 
   // intervalRef  – holds the setInterval ID for auto-play; cleared on pause/reset
   // consoleRef   – DOM ref used to scroll the console into view on error
@@ -192,14 +197,15 @@ export default function VisualizerPage() {
       if (data.error) { setError(data.error); return null }
       setSteps(data.steps ?? [])
 
-      // Persist execution to Supabase (best-effort — don't block on failure)
+      // Persist execution to backend (best-effort — don't block on failure)
       if (user) {
-        supabase.from('execution_history').insert({
-          user_id: user.id,
-          code: src,
-          output: capturedOutput,
-        }).then(({ error: dbErr }) => {
-          if (dbErr) console.warn('Could not save execution history:', dbErr.message)
+        api.post('/history', {
+          code_snapshot:  src,
+          total_steps:    data.total_steps ?? 0,
+          had_error:      !!data.error,
+          output_summary: capturedOutput.slice(0, 500) || null,
+        }).catch((dbErr) => {
+          console.warn('Could not save execution history:', dbErr.message)
         })
       }
 
@@ -245,24 +251,65 @@ export default function VisualizerPage() {
     setOutput(''); setError(null); setStale(false)
   }, [])
 
-  // Save the current editor code to the saved_codes table
+  // Save the current editor code via POST /codes
   const handleSaveCode = useCallback(async () => {
     if (!user || saveStatus === 'saving') return
     setSaveStatus('saving')
-    const { error: dbErr } = await supabase.from('saved_codes').insert({
-      user_id: user.id,
-      code: code,
-      language: language,
-    })
-    if (dbErr) {
-      console.warn('Save failed:', dbErr.message)
-      setSaveStatus('error')
-    } else {
+    try {
+      await api.post('/codes', {
+        title:        'Untitled',
+        code_content: code,
+        language:     language,
+      })
       setSaveStatus('saved')
+    } catch (err) {
+      console.warn('Save failed:', err.message)
+      setSaveStatus('error')
     }
-    // Reset button label after 2 s
     setTimeout(() => setSaveStatus('idle'), 2000)
   }, [user, saveStatus, code, language])
+
+  // Fetch the list of saved codes for the modal
+  const fetchSavedCodes = useCallback(async () => {
+    if (!user) return
+    setCodesLoading(true)
+    try {
+      const { data } = await api.get('/codes')
+      setSavedCodes(data)
+    } catch (err) {
+      console.warn('Could not load saved codes:', err.message)
+    } finally {
+      setCodesLoading(false)
+    }
+  }, [user])
+
+  // Load a saved code into the editor
+  const handleLoadCode = useCallback(async (codeId) => {
+    try {
+      const { data } = await api.get(`/codes/${codeId}`)
+      setCode(data.code_content)
+      setLanguage(data.language)
+      setSteps([])
+      setCurrentStepIndex(-1)
+      setOutput('')
+      setError(null)
+      setStale(false)
+      setShowCodesModal(false)
+    } catch (err) {
+      console.warn('Could not load code:', err.message)
+    }
+  }, [])
+
+  // Delete a saved code from the modal list
+  const handleDeleteSavedCode = useCallback(async (codeId, e) => {
+    e.stopPropagation()
+    try {
+      await api.delete(`/codes/${codeId}`)
+      setSavedCodes(prev => prev.filter(c => c.id !== codeId))
+    } catch (err) {
+      console.warn('Could not delete code:', err.message)
+    }
+  }, [])
 
   // ── Auto-play interval ───────────────────────────────────────
   // Advances one step every `speed` ms while isRunning is true.
@@ -349,10 +396,10 @@ export default function VisualizerPage() {
 
             <div className="w-px h-4 bg-[#374151] shrink-0" />
 
-            {/* Save Code button — persists current editor code to Supabase */}
+            {/* Save Code button — persists current editor code to backend */}
             <button
               onClick={handleSaveCode}
-              disabled={saveStatus === 'saving'}
+              disabled={!user || saveStatus === 'saving'}
               className={`flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md border
                           font-mono transition-colors duration-150 shrink-0 disabled:opacity-50
                           ${saveStatus === 'saved'
@@ -366,6 +413,20 @@ export default function VisualizerPage() {
                   : saveStatus === 'error' ? '✕ Failed'
                     : '💾 Save Code'}
             </button>
+
+            <div className="w-px h-4 bg-[#374151] shrink-0" />
+
+            {/* My Codes button — open saved codes modal */}
+            {user && (
+              <button
+                onClick={() => { setShowCodesModal(true); fetchSavedCodes() }}
+                className="flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md border
+                           font-mono transition-colors duration-150 shrink-0
+                           bg-transparent border-[#374151] text-gray-400 hover:text-white hover:bg-[#1F2937]"
+              >
+                📂 My Codes
+              </button>
+            )}
 
             <div className="w-px h-4 bg-[#374151] shrink-0" />
 
@@ -613,6 +674,76 @@ export default function VisualizerPage() {
       </div>
 
       <Footer />
+
+      {/* ── Saved Codes Modal ────────────────────────────────────
+          Opens when the user clicks "📂 My Codes" in the toolbar.
+          Lists all saved snippets (title + date) and lets the user
+          click one to load it into the editor, or delete it.
+      ───────────────────────────────────────────────────────── */}
+      {showCodesModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
+          onClick={() => setShowCodesModal(false)}
+        >
+          <div
+            className="w-full max-w-md bg-[#111827] border border-[#1F2937] rounded-xl shadow-2xl overflow-hidden"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#1F2937]">
+              <span className="text-white font-semibold text-sm font-mono">📂 My Saved Codes</span>
+              <button
+                onClick={() => setShowCodesModal(false)}
+                className="text-gray-500 hover:text-white text-xs px-2 py-1 rounded hover:bg-[#1F2937] transition-colors"
+              >
+                ✕ Close
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="max-h-80 overflow-y-auto">
+              {codesLoading ? (
+                <div className="flex items-center justify-center py-10">
+                  <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : savedCodes.length === 0 ? (
+                <div className="text-center py-10">
+                  <div className="text-4xl mb-3">📭</div>
+                  <p className="text-gray-500 text-sm">No saved codes yet.</p>
+                  <p className="text-gray-600 text-xs mt-1">Click 💾 Save Code to save your first snippet.</p>
+                </div>
+              ) : (
+                <ul className="divide-y divide-[#1F2937]">
+                  {savedCodes.map((c) => (
+                    <li
+                      key={c.id}
+                      onClick={() => handleLoadCode(c.id)}
+                      className="flex items-center justify-between px-5 py-3 hover:bg-[#1F2937] cursor-pointer transition-colors group"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-gray-200 text-sm font-mono truncate">{c.title || 'Untitled'}</p>
+                        <p className="text-gray-600 text-xs mt-0.5">
+                          {c.language} &middot; {new Date(c.updated_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0 ml-3">
+                        <span className="text-blue-400 text-xs opacity-0 group-hover:opacity-100 transition-opacity font-mono">Load →</span>
+                        <button
+                          onClick={(e) => handleDeleteSavedCode(c.id, e)}
+                          className="text-gray-600 hover:text-red-400 text-xs px-1.5 py-0.5 rounded hover:bg-red-900/20 transition-colors"
+                          title="Delete"
+                        >
+                          🗑
+                        </button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
