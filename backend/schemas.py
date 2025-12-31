@@ -26,7 +26,9 @@ class ORMBase(BaseModel):
 class UserRegister(BaseModel):
     full_name: str = Field(..., min_length=1, max_length=100)
     email:     str = Field(..., min_length=3, max_length=150)
-    password:  str = Field(..., min_length=6)
+    # bcrypt hard-limits input to 72 bytes; enforce at the API boundary so
+    # callers receive a clean HTTP 422 rather than an internal ValueError.
+    password:  str = Field(..., min_length=6, max_length=72)
 
 
 class UserLogin(BaseModel):

@@ -335,10 +335,19 @@ def execute_code(code: str, inputs: Optional[List[str]] = None) -> Dict:
     input_queue = deque(inputs or [])
 
     def fake_input(prompt=""):
-        val = input_queue.popleft() if input_queue else ""
-        # Echo prompt + value to stdout so it appears in console output
-        sys.stdout.write(f"{prompt}{val}\n")
-        return val
+        if input_queue:
+            val = input_queue.popleft()
+            # Echo prompt + supplied value so the console output looks natural
+            sys.stdout.write(f"{prompt}{val}\n")
+            return val
+        else:
+            # No value was pre-filled for this input() call.
+            # Write a visible warning so the user knows what happened.
+            sys.stdout.write(
+                f"{prompt}"
+                f"[⚠ No input provided — add a value in the '⌨ Inputs:' field and re-run]\n"
+            )
+            return ""
 
     # ── Execute ───────────────────────────────────────────────────
     old_stdout, old_stderr = sys.stdout, sys.stderr
