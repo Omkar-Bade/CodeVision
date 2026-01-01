@@ -30,8 +30,7 @@ export default defineConfig({
           // Framer Motion animation library — large but stable.
           'vendor-motion': ['framer-motion'],
 
-          // Supabase client.
-          'vendor-supabase': ['@supabase/supabase-js'],
+
         },
       },
     },

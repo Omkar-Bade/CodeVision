@@ -2,7 +2,9 @@
 auth.py — Password hashing and JWT utilities for CodeVision.
 
 Security guarantees:
-  - Passwords are hashed with bcrypt (cost factor 12) via passlib.
+  - Passwords are hashed with bcrypt (cost factor 12) directly via the
+    `bcrypt` library.  passlib is NOT used — it is unmaintained and its
+    bcrypt binding broke with bcrypt>=4.1 (missing __about__ attribute).
     Plain-text passwords are NEVER stored, logged, or returned.
   - Access tokens are short-lived HS256 JWTs.  The secret comes
     exclusively from the JWT_SECRET_KEY environment variable.
@@ -22,7 +24,7 @@ from dotenv import load_dotenv
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
-from passlib.context import CryptContext
+import bcrypt
 from sqlalchemy.orm import Session
 
 from database import get_db
@@ -44,18 +46,38 @@ if not JWT_SECRET_KEY:
     )
 
 # ── Password hashing ──────────────────────────────────────────────────────────
+# bcrypt truncates passwords silently at 72 bytes — we surface this as an
+# explicit error so callers know to enforce the limit before reaching here.
+# The Pydantic schema (schemas.py) should add max_length=72 for belt-and-
+# suspenders protection, but this guard is the authoritative safety net.
 
-_pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+_BCRYPT_ROUNDS = 12   # work factor — increase to 13/14 on beefier hardware
 
 
 def hash_password(plain_password: str) -> str:
-    """Return a bcrypt hash of plain_password. Never call with an already-hashed value."""
-    return _pwd_context.hash(plain_password)
+    """Return a bcrypt hash of plain_password (rounds=12).
+
+    Never call with an already-hashed value.
+    Raises ValueError if the password exceeds 72 bytes (bcrypt hard limit).
+    """
+    password_bytes = plain_password.encode("utf-8")
+    if len(password_bytes) > 72:
+        raise ValueError(
+            "Password cannot be longer than 72 bytes. "
+            "Truncate or reject it before calling hash_password()."
+        )
+    hashed = bcrypt.hashpw(password_bytes, bcrypt.gensalt(rounds=_BCRYPT_ROUNDS))
+    return hashed.decode("utf-8")   # store as a plain string in the DB column
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Return True iff plain_password matches the stored bcrypt hash."""
-    return _pwd_context.verify(plain_password, hashed_password)
+    """Return True iff plain_password matches the stored bcrypt hash.
+
+    Uses bcrypt.checkpw which performs a constant-time comparison.
+    """
+    password_bytes = plain_password.encode("utf-8")
+    hashed_bytes   = hashed_password.encode("utf-8")
+    return bcrypt.checkpw(password_bytes, hashed_bytes)
 
 
 # ── Access token (JWT) ────────────────────────────────────────────────────────
