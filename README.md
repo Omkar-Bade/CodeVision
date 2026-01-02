@@ -288,6 +288,96 @@ Frontend runs at **http://localhost:3000** (or **5173** — whichever Vite picks
 
 ---
 
+## 🚀 Deploying to Render
+
+CodeVision ships with a [`render.yaml`](render.yaml) Blueprint that auto-configures both services when you connect your GitHub repository to Render.
+
+### Architecture on Render
+
+```
+GitHub Repo
+├── render.yaml  ← Blueprint auto-detected by Render
+│
+├── backend/     → Render Web Service  (Python / Uvicorn / FastAPI)
+│                   URL: https://codevision-backend.onrender.com
+│
+└── frontend/    → Render Static Site  (Vite build → dist/)
+                    URL: https://codevision-frontend.onrender.com
+```
+
+### Prerequisites
+
+- A [Render](https://render.com) account (free tier is sufficient)
+- A managed MySQL database — Render's free tier **does not include MySQL**.
+  Choose one of these free options:
+  | Provider | Free tier | Notes |
+  |----------|-----------|-------|
+  | [PlanetScale](https://planetscale.com) | 5 GB | Best DX, branching |
+  | [Railway](https://railway.app) | $5 credit/month | One-click MySQL |
+  | [Aiven](https://aiven.io) | 1 free service | Enterprise-grade |
+
+### Step-by-step Deployment
+
+#### 1. Push your code to GitHub
+
+```bash
+git add .
+git commit -m "chore: add Render deployment config"
+git push origin main
+```
+
+#### 2. Create a new Blueprint on Render
+
+1. Go to **Render Dashboard → New → Blueprint**
+2. Connect your GitHub repository
+3. Render will detect `render.yaml` and show a preview of both services
+4. Click **Apply** — Render creates both services
+
+#### 3. Set secret environment variables (Backend service)
+
+In the Render dashboard → **codevision-backend → Environment**:
+
+| Variable | Value |
+|----------|-------|
+| `DB_HOST` | Your MySQL host (e.g. `aws.connect.psdb.cloud`) |
+| `DB_PORT` | `3306` |
+| `DB_USER` | Your MySQL username |
+| `DB_PASSWORD` | Your MySQL password |
+| `DB_NAME` | `codevision_db` |
+| `JWT_SECRET_KEY` | Run: `python -c "import secrets; print(secrets.token_hex(32))"` |
+| `ALLOWED_ORIGINS` | `https://codevision-frontend.onrender.com` (your frontend URL) |
+
+#### 4. Set environment variables (Frontend service)
+
+In the Render dashboard → **codevision-frontend → Environment**:
+
+| Variable | Value |
+|----------|-------|
+| `VITE_API_URL` | `https://codevision-backend.onrender.com` |
+
+Then trigger a **Manual Deploy** so Vite picks up the new value.
+
+#### 5. Verify
+
+```bash
+# Backend health check
+curl https://codevision-backend.onrender.com/health
+# → {"status":"healthy","service":"CodeVision Backend"}
+
+# Frontend — open in browser
+open https://codevision-frontend.onrender.com
+```
+
+### Important notes
+
+> **Free tier spin-down**: Render's free web services spin down after 15 minutes of inactivity. The first request after idle will take ~30 seconds. Upgrade to the **Starter** plan ($7/month) for always-on behaviour.
+
+> **CORS**: The `ALLOWED_ORIGINS` env var on the backend **must** match the exact frontend URL (no trailing slash). If you add a custom domain, add it to `ALLOWED_ORIGINS` as well (comma-separated).
+
+> **SPA routing**: The `render.yaml` includes a wildcard rewrite rule so React Router's client-side routes (e.g. `/visualizer`, `/courses`) are served correctly without 404s.
+
+---
+
 ## 🔐 Authentication & Security
 
 | Concern | Implementation |

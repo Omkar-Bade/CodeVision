@@ -11,6 +11,7 @@ The execution engine (executor.py) is never modified by the auth migration.
 """
 
 from dotenv import load_dotenv
+import os
 
 # Load .env before anything else so every module can read env vars at import time
 load_dotenv()
@@ -31,17 +32,25 @@ app = FastAPI(
 )
 
 # ── CORS ──────────────────────────────────────────────────────────────────────
-# allow_credentials=True is required for the Authorization header to be sent
-# cross-origin.  Restrict origins to the frontend dev server in development;
-# update this list (or read from an env var) when deploying to production.
+# Origins are read from the ALLOWED_ORIGINS environment variable (comma-separated)
+# so production deployments (e.g. Render) never need a code change — just set
+# the env var in the dashboard:
+#   ALLOWED_ORIGINS=https://codevision-frontend.onrender.com,https://yourdomain.com
+#
+# Falls back to localhost entries when the env var is absent (local dev).
+_raw_origins = os.getenv("ALLOWED_ORIGINS", "")
+_extra_origins = [o.strip() for o in _raw_origins.split(",") if o.strip()]
+
+ALLOWED_ORIGINS = _extra_origins or [
+    "http://localhost:5173",      # Vite default port
+    "http://127.0.0.1:5173",
+    "http://localhost:3000",      # Vite alternative port
+    "http://127.0.0.1:3000",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",     # Vite default port
-        "http://127.0.0.1:5173",
-        "http://localhost:3000",     # Vite alternative port (your current setup)
-        "http://127.0.0.1:3000",
-    ],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
