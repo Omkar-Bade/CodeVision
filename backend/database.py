@@ -1,4 +1,4 @@
-"""
+﻿"""
 database.py — SQLAlchemy engine and session factory for CodeVision.
 
 All connection parameters are read from environment variables so that
@@ -7,6 +7,13 @@ pure env-var change with no source-code edits.
 
 Required env vars (defined in .env.example):
   DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME
+
+Optional env vars:
+  DB_SSL_CA_CONTENT — full PEM text of the CA certificate (required for
+                      Aiven-hosted MySQL which enforces SSL). When set,
+                      the certificate is written to /tmp/ca.pem at startup
+                      and used for the SSL connection. Leave unset for
+                      local development (SSL is skipped).
 
 Usage in FastAPI routes:
   def my_route(db: Session = Depends(get_db)):
@@ -40,11 +47,32 @@ DATABASE_URL = (
     f"@{DB_HOST}:{DB_PORT}/{DB_NAME}?charset=utf8mb4"
 )
 
+# ── SSL / CA certificate (Aiven & other managed MySQL hosts) ──────────────────
+# Aiven enforces SSL and requires a CA certificate to verify the server.
+# Render's build filesystem is read-only, but /tmp is always writable at runtime.
+# We write the PEM text from the env var to /tmp/ca.pem once at startup.
+#
+# To configure:
+#   1. Copy the CA certificate text from your Aiven console (or provider).
+#   2. Paste the full PEM into the DB_SSL_CA_CONTENT env var in Render dashboard.
+#   3. Keep DB_SSL_CA_CONTENT unset locally — SSL is skipped automatically.
+
+_ssl_ca_content = os.getenv("DB_SSL_CA_CONTENT", "").strip()
+_ssl_connect_args = {}
+
+if _ssl_ca_content:
+    _ca_path = "/tmp/ca.pem"
+    with open(_ca_path, "w") as _f:
+        _f.write(_ssl_ca_content)
+    # PyMySQL passes ssl kwargs directly to the underlying ssl module
+    _ssl_connect_args = {"ssl": {"ca": _ca_path}}
+
 # ── Engine ────────────────────────────────────────────────────────────────────
 # pool_pre_ping=True: verify connections before use so stale connections
 # from the pool don't cause cryptic errors.
 engine = create_engine(
     DATABASE_URL,
+    connect_args=_ssl_connect_args,
     pool_pre_ping=True,
     pool_recycle=3600,   # recycle connections after 1 hour to avoid MySQL's
                          # 8-hour wait_timeout disconnect

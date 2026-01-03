@@ -1,4 +1,4 @@
-﻿# render.yaml — Render Blueprint for CodeVision
+# render.yaml — Render Blueprint for CodeVision
 # Place this file at the repository root.
 #
 # When you connect this repository to Render, Render will auto-detect this file
@@ -46,6 +46,12 @@ services:
 
       # ── CORS ──────────────────────────────────────────────────────────────
       - key: ALLOWED_ORIGINS
+        sync: false
+
+      # ── SSL / CA Certificate (Aiven-hosted MySQL) ─────────────────────────
+      # Paste the full PEM text of the Aiven CA certificate here.
+      # Leave blank if your MySQL host does not require SSL verification.
+      - key: DB_SSL_CA_CONTENT
         sync: false
 
   # ── Frontend — Vite/React Static Site ─────────────────────────────────────
