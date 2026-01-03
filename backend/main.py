@@ -1,4 +1,4 @@
-"""
+﻿"""
 main.py — FastAPI application entry point for CodeVision.
 
 Routers:
@@ -6,6 +6,13 @@ Routers:
   /codes    — saved code CRUD (protected)
   /history  — execution history (protected)
   /execute  — Python execution engine (unchanged, no auth required)
+
+Static file serving:
+  The compiled React/Vite frontend (frontend/dist/) is mounted at "/"
+  AFTER all API routes are registered.  FastAPI evaluates routes in
+  registration order, so all /auth/*, /codes, /history, /execute, and
+  /health routes are matched first; only unmatched paths fall through to
+  the static file handler.  This is what makes the SPA's own routing work.
 
 The execution engine (executor.py) is never modified by the auth migration.
 """
@@ -18,6 +25,7 @@ load_dotenv()
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from typing import List, Optional
 
@@ -32,12 +40,13 @@ app = FastAPI(
 )
 
 # ── CORS ──────────────────────────────────────────────────────────────────────
-# Origins are read from the ALLOWED_ORIGINS environment variable (comma-separated)
-# so production deployments (e.g. Render) never need a code change — just set
-# the env var in the dashboard:
-#   ALLOWED_ORIGINS=https://codevision-frontend.onrender.com,https://yourdomain.com
+# In production, frontend and backend share the same origin (single Render
+# service), so cross-origin requests do not occur.  CORS is kept here so the
+# dev server (localhost:3000) still works, and as a fallback if ALLOWED_ORIGINS
+# is set for any external consumers of the API.
 #
-# Falls back to localhost entries when the env var is absent (local dev).
+# Set ALLOWED_ORIGINS env var (comma-separated) in Render dashboard if needed.
+# Leave it unset in production (same-origin setup) — localhost fallback is used.
 _raw_origins = os.getenv("ALLOWED_ORIGINS", "")
 _extra_origins = [o.strip() for o in _raw_origins.split(",") if o.strip()]
 
@@ -70,11 +79,6 @@ class CodeRequest(BaseModel):
     inputs: Optional[List[str]] = None
 
 
-@app.get("/")
-def root():
-    return {"message": "CodeVision API is running", "version": "3.0.0"}
-
-
 @app.get("/health")
 def health():
     return {"status": "healthy", "service": "CodeVision Backend"}
@@ -93,3 +97,30 @@ def execute(request: CodeRequest):
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ── Static file serving (React SPA) ───────────────────────────────────────────
+# Mounted LAST so API routes registered above are never shadowed.
+# html=True enables:
+#   - Serving index.html for directory requests (e.g. GET /)
+#   - Falling back to index.html for any path not matching a static asset,
+#     which is what lets React Router handle /visualizer, /courses, etc.
+#
+# Path: backend/ and frontend/ are sibling folders, so from backend/main.py
+# the dist directory is one level up then into frontend/dist.
+# On Render the working directory is the repo root, so use frontend/dist directly.
+
+_dist_dir = os.path.join(os.path.dirname(__file__), "..", "frontend", "dist")
+_dist_dir = os.path.abspath(_dist_dir)
+
+if os.path.isdir(_dist_dir):
+    app.mount("/", StaticFiles(directory=_dist_dir, html=True), name="static")
+else:
+    # In development (before a frontend build exists), skip mounting
+    # so the API is still accessible without needing to build the frontend.
+    import warnings
+    warnings.warn(
+        f"frontend/dist not found at {_dist_dir}. "
+        "Run `npm run build` inside frontend/ to enable static file serving.",
+        stacklevel=1,
+    )

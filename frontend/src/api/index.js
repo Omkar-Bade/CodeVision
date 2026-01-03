@@ -27,7 +27,11 @@
 
 import axios from 'axios'
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
+// In production, frontend and backend share the same origin (single Render service),
+// so API calls use relative paths (empty base URL). VITE_API_URL is kept as an
+// optional override for advanced setups (e.g. pointing a local dev frontend at a
+// remote staging backend). When unset — the default — relative paths are used.
+const BASE_URL = import.meta.env.VITE_API_URL ?? ''
 
 // ── Module-level access token (in-memory, never persisted) ───────────────────
 // AuthContext calls setAccessToken() after every login / token refresh.

@@ -7,6 +7,16 @@ export default defineConfig({
   server: {
     port: 3000,
     open: true,
+    // Proxy API calls to the FastAPI backend in local development.
+    // This mirrors the production setup (single origin) so no VITE_API_URL
+    // or CORS changes are needed when switching between dev and prod.
+    proxy: {
+      '/auth':    { target: 'http://localhost:8000', changeOrigin: true },
+      '/codes':   { target: 'http://localhost:8000', changeOrigin: true },
+      '/history': { target: 'http://localhost:8000', changeOrigin: true },
+      '/execute': { target: 'http://localhost:8000', changeOrigin: true },
+      '/health':  { target: 'http://localhost:8000', changeOrigin: true },
+    },
   },
 
   build: {
