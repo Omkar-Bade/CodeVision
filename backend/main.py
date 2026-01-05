@@ -1,4 +1,4 @@
-﻿"""
+"""
 main.py — FastAPI application entry point for CodeVision.
 
 Routers:
@@ -14,9 +14,17 @@ Static file serving:
   /health routes are matched first; only unmatched paths fall through to
   the static file handler.  This is what makes the SPA's own routing work.
 
+Startup:
+  A lifespan context manager calls Base.metadata.create_all(bind=engine)
+  once on startup.  This is idempotent — tables that already exist are
+  left untouched (SQLAlchemy emits CREATE TABLE IF NOT EXISTS).  It means
+  the first deployment on a fresh database automatically creates all tables
+  without a separate migration step.
+
 The execution engine (executor.py) is never modified by the auth migration.
 """
 
+from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 import os
 
@@ -29,14 +37,33 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from typing import List, Optional
 
+from database import Base, engine
+import models  # noqa: F401 — importing registers all ORM classes on Base
 from executor import execute_code
 from routers.auth_routes import router as auth_router
 from routers.code_routes import router as code_router
+
+
+# ── Startup / shutdown lifecycle ──────────────────────────────────────────────
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Runs once when Uvicorn starts the application.
+
+    create_all() is safe to call on every startup:
+      - Tables that already exist are NOT modified (idempotent).
+      - Tables that are missing ARE created from the ORM model definitions.
+    This removes the need for a separate DB-init step on first deploy.
+    """
+    Base.metadata.create_all(bind=engine)
+    yield
+    # (shutdown code would go after yield — nothing needed here)
 
 app = FastAPI(
     title="CodeVision API",
     description="Step-by-step Python code execution visualizer backend",
     version="3.0.0",
+    lifespan=lifespan,
 )
 
 # ── CORS ──────────────────────────────────────────────────────────────────────
