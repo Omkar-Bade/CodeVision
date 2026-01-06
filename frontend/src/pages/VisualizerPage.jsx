@@ -16,7 +16,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import axios from 'axios'
 import api from '../api'
 import { useAuth } from '../context/AuthContext'
 
@@ -30,8 +29,6 @@ import CodeEditor, { DEFAULT_CODE } from '../components/CodeEditor'
 import ExecutionPanel from '../components/ExecutionPanel'
 import MemoryView from '../components/MemoryView'
 
-// Python FastAPI execution service URL
-const API_URL = 'http://localhost:8000'
 
 // Speed slider maps 0–100 (slider position) to MAX_DELAY–MIN_DELAY ms (execution interval).
 // Slider left = slowest (2 s per step), slider right = fastest (80 ms per step).
@@ -191,7 +188,7 @@ export default function VisualizerPage() {
       const inputs = inputValues.trim()
         ? inputValues.split(',').map(s => s.trim())
         : undefined
-      const { data } = await axios.post(`${API_URL}/execute`, { code: src, inputs })
+      const { data } = await api.post('/execute', { code: src, inputs })
       const capturedOutput = data.output ?? ''
       setOutput(capturedOutput)
       if (data.error) { setError(data.error); return null }
