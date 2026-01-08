@@ -42,6 +42,7 @@ import models  # noqa: F401 — importing registers all ORM classes on Base
 from executor import execute_code
 from routers.auth_routes import router as auth_router
 from routers.code_routes import router as code_router
+from routers.ws_routes import router as ws_router
 
 
 # ── Startup / shutdown lifecycle ──────────────────────────────────────────────
@@ -95,6 +96,7 @@ app.add_middleware(
 # ── Routers ───────────────────────────────────────────────────────────────────
 app.include_router(auth_router)   # prefix="/auth" is set in the router itself
 app.include_router(code_router)   # no prefix — /codes, /history
+app.include_router(ws_router)     # WebSocket /ws/execute — interactive console
 
 
 # ── Execution engine (unchanged) ──────────────────────────────────────────────

@@ -28,6 +28,7 @@ import Footer from '../components/Footer'
 import CodeEditor, { DEFAULT_CODE } from '../components/CodeEditor'
 import ExecutionPanel from '../components/ExecutionPanel'
 import MemoryView from '../components/MemoryView'
+import InteractiveConsole from '../components/InteractiveConsole'
 
 
 // Speed slider maps 0–100 (slider position) to MAX_DELAY–MIN_DELAY ms (execution interval).
@@ -92,6 +93,9 @@ export default function VisualizerPage() {
 
   // editorVisible – toggles the Monaco Editor panel on/off
   const [editorVisible, setEditorVisible] = useState(true)
+
+  // mode – switches between step-by-step visualizer and interactive console
+  const [mode, setMode] = useState('visualizer') // 'visualizer' | 'interactive'
 
   // saveStatus – feedback state for the Save Code button
   const [saveStatus, setSaveStatus] = useState('idle') // 'idle' | 'saving' | 'saved' | 'error'
@@ -393,6 +397,30 @@ export default function VisualizerPage() {
 
             <div className="w-px h-4 bg-[#374151] shrink-0" />
 
+            {/* Mode toggle — Step-by-step vs Interactive Console */}
+            <div className="flex items-center bg-[#0B1120] border border-[#374151] rounded-md overflow-hidden shrink-0">
+              <button
+                onClick={() => setMode('visualizer')}
+                className={`px-2.5 py-1 text-xs font-mono transition-colors duration-150
+                            ${mode === 'visualizer'
+                    ? 'bg-blue-600/20 text-blue-400 border-r border-blue-600/30'
+                    : 'text-gray-400 hover:text-white hover:bg-[#1F2937] border-r border-[#374151]'}`}
+              >
+                🔍 Step-by-step
+              </button>
+              <button
+                onClick={() => setMode('interactive')}
+                className={`px-2.5 py-1 text-xs font-mono transition-colors duration-150
+                            ${mode === 'interactive'
+                    ? 'bg-green-600/20 text-green-400'
+                    : 'text-gray-400 hover:text-white hover:bg-[#1F2937]'}`}
+              >
+                ⌨ Interactive
+              </button>
+            </div>
+
+            <div className="w-px h-4 bg-[#374151] shrink-0" />
+
             {/* Save Code button — persists current editor code to backend */}
             <button
               onClick={handleSaveCode}
@@ -425,94 +453,99 @@ export default function VisualizerPage() {
               </button>
             )}
 
-            <div className="w-px h-4 bg-[#374151] shrink-0" />
+            {/* ── Visualizer-only toolbar controls ─────────────────── */}
+            {mode === 'visualizer' && (
+              <>
+                <div className="w-px h-4 bg-[#374151] shrink-0" />
 
-            {/* Input simulation field — values fed to input() calls */}
-            <div className="flex items-center gap-1.5 shrink-0">
-              <span className="text-xs text-gray-400 font-mono whitespace-nowrap">⌨ Inputs:</span>
-              <input
-                type="text"
-                value={inputValues}
-                onChange={e => setInputValues(e.target.value)}
-                placeholder="e.g. Alice, 25, 3.14"
-                title="Comma-separated values fed to input() calls in order. Example: Alice, 25"
-                className="w-40 px-2 py-0.5 text-xs bg-[#0B1120] border border-[#374151]
-                           rounded-md text-gray-300 placeholder-gray-600
-                           focus:outline-none focus:border-blue-500 transition-colors font-mono"
-              />
-            </div>
+                {/* Input simulation field — values fed to input() calls */}
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <span className="text-xs text-gray-400 font-mono whitespace-nowrap">⌨ Inputs:</span>
+                  <input
+                    type="text"
+                    value={inputValues}
+                    onChange={e => setInputValues(e.target.value)}
+                    placeholder="e.g. Alice, 25, 3.14"
+                    title="Comma-separated values fed to input() calls in order. Example: Alice, 25"
+                    className="w-40 px-2 py-0.5 text-xs bg-[#0B1120] border border-[#374151]
+                               rounded-md text-gray-300 placeholder-gray-600
+                               focus:outline-none focus:border-blue-500 transition-colors font-mono"
+                  />
+                </div>
 
-            {/* Stale warning — shown when code was edited after the last run */}
-            {stale && (
-              <motion.span
-                className="text-xs text-vs-yellow font-mono"
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-              >
-                ⚠ Code changed — click Run
-              </motion.span>
+                {/* Stale warning — shown when code was edited after the last run */}
+                {stale && (
+                  <motion.span
+                    className="text-xs text-vs-yellow font-mono"
+                    initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                  >
+                    ⚠ Code changed — click Run
+                  </motion.span>
+                )}
+
+                {/* ── Playback Controls (right-aligned) ─────────────
+                    All execution buttons live here so the user never
+                    needs to scroll down to control playback.
+                ─────────────────────────────────────────────────── */}
+                <div className="ml-auto flex items-center gap-1.5 shrink-0">
+
+                  {/* Reset clears all steps and execution state */}
+                  <TBtn onClick={handleReset} variant="danger" title="Restart (Ctrl+R)">
+                    🔁 Restart
+                  </TBtn>
+
+                  <div className="w-px h-4 bg-[#374151]" />
+
+                  {/* Step backward through execution history */}
+                  <TBtn
+                    onClick={handlePrev}
+                    disabled={atStart || steps.length === 0}
+                    title="Step Back (←)"
+                  >
+                    ⏮ Step Back
+                  </TBtn>
+
+                  {/* Run/Pause — single button that toggles based on isRunning */}
+                  {isRunning ? (
+                    <TBtn onClick={handlePause} variant="primary" title="Pause (Space)">
+                      ⏸ Pause
+                    </TBtn>
+                  ) : (
+                    <TBtn onClick={handleRun} disabled={isLoading} variant="primary"
+                      title="Run / Resume (Space)">
+                      {isLoading ? '⏳ Running…' : '▶ Run'}
+                    </TBtn>
+                  )}
+
+                  {/* Step forward through execution history */}
+                  <TBtn
+                    onClick={handleNext}
+                    disabled={atEnd || steps.length === 0}
+                    title="Next Step (→)"
+                  >
+                    ⏭ Step
+                  </TBtn>
+
+                  <div className="w-px h-4 bg-[#374151]" />
+
+                  {/* Speed slider: left = slow (2 s), right = fast (80 ms) */}
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs text-gray-500" title="Slow">🐢</span>
+                    <input
+                      type="range" min={0} max={100} value={sliderVal}
+                      onChange={handleSlider}
+                      className="w-20" title="Execution speed"
+                    />
+                    <span className="text-xs text-gray-500" title="Fast">🐇</span>
+                    <span className="text-xs text-gray-400 font-mono w-12 text-right">
+                      {speed < 1000 ? `${speed}ms` : `${(speed / 1000).toFixed(1)}s`}
+                    </span>
+                  </div>
+
+
+                </div>
+              </>
             )}
-
-            {/* ── Playback Controls (right-aligned) ─────────────
-                All execution buttons live here so the user never
-                needs to scroll down to control playback.
-            ─────────────────────────────────────────────────── */}
-            <div className="ml-auto flex items-center gap-1.5 shrink-0">
-
-              {/* Reset clears all steps and execution state */}
-              <TBtn onClick={handleReset} variant="danger" title="Restart (Ctrl+R)">
-                🔁 Restart
-              </TBtn>
-
-              <div className="w-px h-4 bg-[#374151]" />
-
-              {/* Step backward through execution history */}
-              <TBtn
-                onClick={handlePrev}
-                disabled={atStart || steps.length === 0}
-                title="Step Back (←)"
-              >
-                ⏮ Step Back
-              </TBtn>
-
-              {/* Run/Pause — single button that toggles based on isRunning */}
-              {isRunning ? (
-                <TBtn onClick={handlePause} variant="primary" title="Pause (Space)">
-                  ⏸ Pause
-                </TBtn>
-              ) : (
-                <TBtn onClick={handleRun} disabled={isLoading} variant="primary"
-                  title="Run / Resume (Space)">
-                  {isLoading ? '⏳ Running…' : '▶ Run'}
-                </TBtn>
-              )}
-
-              {/* Step forward through execution history */}
-              <TBtn
-                onClick={handleNext}
-                disabled={atEnd || steps.length === 0}
-                title="Next Step (→)"
-              >
-                ⏭ Step
-              </TBtn>
-
-              <div className="w-px h-4 bg-[#374151]" />
-
-              {/* Speed slider: left = slow (2 s), right = fast (80 ms) */}
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs text-gray-500" title="Slow">🐢</span>
-                <input
-                  type="range" min={0} max={100} value={sliderVal}
-                  onChange={handleSlider}
-                  className="w-20" title="Execution speed"
-                />
-                <span className="text-xs text-gray-500" title="Fast">🐇</span>
-                <span className="text-xs text-gray-400 font-mono w-12 text-right">
-                  {speed < 1000 ? `${speed}ms` : `${(speed / 1000).toFixed(1)}s`}
-                </span>
-              </div>
-
-
-            </div>
 
           </div>
         </div>
@@ -520,153 +553,196 @@ export default function VisualizerPage() {
         {/* ──────────────────────────────────────────────────────
             MAIN PANELS — fills the remaining viewport height.
             height = 100vh  minus  navbar (56px) + toolbar (~68px) + padding.
-            react-resizable-panels handles the drag-to-resize logic.
-            Monaco's `automaticLayout: true` makes it reflow automatically
-            when its container resizes.
 
-            Panel order:  Editor  |  Execution Viewer  |  Memory Visualization
-            The editor panel is conditionally rendered; when hidden the other
-            two panels expand to fill the full width (via the `key` reset).
+            In VISUALIZER mode:
+              Editor  |  Execution Viewer  |  Memory Visualization
+              react-resizable-panels handles the drag-to-resize logic.
+
+            In INTERACTIVE mode:
+              Editor  |  Interactive Console
+              A single split — code on the left, terminal on the right.
         ────────────────────────────────────────────────────── */}
         <div className="px-4 pt-3 pb-1" style={{ height: 'calc(100vh - 8.25rem)' }}>
-          <PanelGroup
-            // Changing the key forces PanelGroup to remount so panel sizes reset
-            // correctly when the editor is toggled.
-            key={editorVisible ? 'with-editor' : 'no-editor'}
-            orientation="horizontal"
-            className="h-full"
-          >
-            {/* Monaco Editor — conditionally rendered with a slide animation */}
-            <AnimatePresence initial={false}>
-              {editorVisible && (
-                <>
-                  <Panel defaultSize={hSizes.editor} minSize={15} className="flex flex-col">
+          {mode === 'visualizer' ? (
+            <PanelGroup
+              // Changing the key forces PanelGroup to remount so panel sizes reset
+              // correctly when the editor is toggled.
+              key={editorVisible ? 'with-editor' : 'no-editor'}
+              orientation="horizontal"
+              className="h-full"
+            >
+              {/* Monaco Editor — conditionally rendered with a slide animation */}
+              <AnimatePresence initial={false}>
+                {editorVisible && (
+                  <>
+                    <Panel defaultSize={hSizes.editor} minSize={15} className="flex flex-col">
+                      <motion.div
+                        className="glass-panel h-full overflow-hidden"
+                        initial={{ opacity: 0, scaleX: 0.96 }}
+                        animate={{ opacity: 1, scaleX: 1 }}
+                        exit={{ opacity: 0, scaleX: 0.96 }}
+                        transition={{ duration: 0.16 }}
+                        style={{ transformOrigin: 'left' }}
+                      >
+                        <CodeEditor code={code} onChange={handleCodeChange} language={language} />
+                      </motion.div>
+                    </Panel>
+                    {/* Draggable divider between Editor and Execution Viewer */}
+                    <PanelResizeHandle className="resize-handle-x" />
+                  </>
+                )}
+              </AnimatePresence>
+
+              {/* Execution Viewer — highlights the current line and shows step info */}
+              <Panel defaultSize={hSizes.exec} minSize={20} className="flex flex-col">
+                <div className="glass-panel h-full overflow-hidden">
+                  <ExecutionPanel
+                    code={code}
+                    steps={steps}
+                    currentStepIndex={Math.max(0, currentStepIndex)}
+                  />
+                </div>
+              </Panel>
+
+              {/* Draggable divider between Execution Viewer and Memory Visualization */}
+              <PanelResizeHandle className="resize-handle-x" />
+
+              {/* Memory Visualization — shows variable names, values and change animations */}
+              <Panel defaultSize={hSizes.mem} minSize={20} className="flex flex-col">
+                <div className="glass-panel h-full overflow-hidden">
+                  <MemoryView
+                    memory={currentMemory}
+                    prevMemory={prevMemory}
+                    callStack={callStack}
+                    scope={currentScope}
+                  />
+                </div>
+              </Panel>
+            </PanelGroup>
+          ) : (
+            /* ── Interactive Console layout ─────────────────────── */
+            <PanelGroup
+              key={editorVisible ? 'interactive-editor' : 'interactive-only'}
+              orientation="horizontal"
+              className="h-full"
+            >
+              {/* Monaco Editor — same toggle as visualizer mode */}
+              <AnimatePresence initial={false}>
+                {editorVisible && (
+                  <>
+                    <Panel defaultSize={40} minSize={15} className="flex flex-col">
+                      <motion.div
+                        className="glass-panel h-full overflow-hidden"
+                        initial={{ opacity: 0, scaleX: 0.96 }}
+                        animate={{ opacity: 1, scaleX: 1 }}
+                        exit={{ opacity: 0, scaleX: 0.96 }}
+                        transition={{ duration: 0.16 }}
+                        style={{ transformOrigin: 'left' }}
+                      >
+                        <CodeEditor code={code} onChange={handleCodeChange} language={language} />
+                      </motion.div>
+                    </Panel>
+                    <PanelResizeHandle className="resize-handle-x" />
+                  </>
+                )}
+              </AnimatePresence>
+
+              {/* Interactive Console — fills the remaining space */}
+              <Panel defaultSize={editorVisible ? 60 : 100} minSize={30} className="flex flex-col">
+                <div className="glass-panel h-full overflow-hidden">
+                  <InteractiveConsole code={code} isActive={mode === 'interactive'} />
+                </div>
+              </Panel>
+            </PanelGroup>
+          )}
+        </div>
+
+        {/* ── Visualizer-only bottom sections (progress + console) ──── */}
+        {mode === 'visualizer' && (
+          <>
+            {/* ──────────────────────────────────────────────────────
+                PROGRESS BAR
+                Visible when the user scrolls below the main panels.
+                Animates smoothly as currentStepIndex advances.
+            ────────────────────────────────────────────────────── */}
+            <div className="px-4 pt-3">
+              <div className="bg-[#111827] border border-[#1F2937] rounded-xl px-4 py-2.5">
+                <div className="flex justify-between text-xs text-gray-500 mb-1.5 font-mono">
+                  <span>Progress</span>
+                  <span>
+                    {steps.length > 0
+                      ? `Step ${currentStepIndex + 1} of ${steps.length}`
+                      : '— Not running'}
+                  </span>
+                </div>
+                <div className="h-1.5 bg-[#1F2937] rounded-full overflow-hidden">
+                  <motion.div
+                    className="h-full bg-blue-500 rounded-full"
+                    animate={{ width: `${progress}%` }}
+                    transition={{ duration: 0.25, ease: 'easeOut' }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* ──────────────────────────────────────────────────────
+                CONSOLE OUTPUT
+                Shows stdout from print() statements and any runtime
+                errors. Automatically scrolled into view when an error
+                is detected (see the useEffect above).
+            ────────────────────────────────────────────────────── */}
+            <div className="px-4 py-3 pb-12" ref={consoleRef}>
+              <div className="bg-[#111827] border border-[#1F2937] rounded-xl overflow-hidden">
+
+                {/* Status header */}
+                <div className="panel-header">
+                  <span className="font-mono text-[11px]">Console Output</span>
+                  <div className="flex items-center gap-2">
+                    {error && <span className="text-red-400  text-[10px] font-mono">● Error</span>}
+                    {output && !error && <span className="text-green-400 text-[10px] font-mono">● Output</span>}
+                    {!error && !output && <span className="text-gray-600 text-[10px] font-mono">● Idle</span>}
+                  </div>
+                </div>
+
+                {/* Error block */}
+                <AnimatePresence>
+                  {error && (
                     <motion.div
-                      className="glass-panel h-full overflow-hidden"
-                      initial={{ opacity: 0, scaleX: 0.96 }}
-                      animate={{ opacity: 1, scaleX: 1 }}
-                      exit={{ opacity: 0, scaleX: 0.96 }}
-                      transition={{ duration: 0.16 }}
-                      style={{ transformOrigin: 'left' }}
+                      className="mx-3 mt-2 bg-red-950/40 border border-red-800/60
+                                 rounded-lg p-3 flex items-start gap-3"
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
                     >
-                      <CodeEditor code={code} onChange={handleCodeChange} language={language} />
+                      <span className="text-red-400 text-sm shrink-0">⚠</span>
+                      <pre className="text-red-300 text-xs flex-1 overflow-auto whitespace-pre-wrap font-mono">
+                        {error}
+                      </pre>
+                      <button
+                        onClick={() => setError(null)}
+                        className="text-gray-500 hover:text-white shrink-0 text-xs"
+                      >
+                        ✕
+                      </button>
                     </motion.div>
-                  </Panel>
-                  {/* Draggable divider between Editor and Execution Viewer */}
-                  <PanelResizeHandle className="resize-handle-x" />
-                </>
-              )}
-            </AnimatePresence>
+                  )}
+                </AnimatePresence>
 
-            {/* Execution Viewer — highlights the current line and shows step info */}
-            <Panel defaultSize={hSizes.exec} minSize={20} className="flex flex-col">
-              <div className="glass-panel h-full overflow-hidden">
-                <ExecutionPanel
-                  code={code}
-                  steps={steps}
-                  currentStepIndex={Math.max(0, currentStepIndex)}
-                />
-              </div>
-            </Panel>
+                {/* stdout output */}
+                <div className="px-4 py-3 font-mono text-sm min-h-[3rem]">
+                  {!error && output ? (
+                    <pre className="text-green-400 whitespace-pre-wrap">{output}</pre>
+                  ) : !error ? (
+                    <span className="text-gray-600">
+                      No output yet. Run your code to see results here.
+                    </span>
+                  ) : null}
+                </div>
 
-            {/* Draggable divider between Execution Viewer and Memory Visualization */}
-            <PanelResizeHandle className="resize-handle-x" />
-
-            {/* Memory Visualization — shows variable names, values and change animations */}
-            <Panel defaultSize={hSizes.mem} minSize={20} className="flex flex-col">
-              <div className="glass-panel h-full overflow-hidden">
-                <MemoryView
-                  memory={currentMemory}
-                  prevMemory={prevMemory}
-                  callStack={callStack}
-                  scope={currentScope}
-                />
-              </div>
-            </Panel>
-          </PanelGroup>
-        </div>
-
-        {/* ──────────────────────────────────────────────────────
-            PROGRESS BAR
-            Visible when the user scrolls below the main panels.
-            Animates smoothly as currentStepIndex advances.
-        ────────────────────────────────────────────────────── */}
-        <div className="px-4 pt-3">
-          <div className="bg-[#111827] border border-[#1F2937] rounded-xl px-4 py-2.5">
-            <div className="flex justify-between text-xs text-gray-500 mb-1.5 font-mono">
-              <span>Progress</span>
-              <span>
-                {steps.length > 0
-                  ? `Step ${currentStepIndex + 1} of ${steps.length}`
-                  : '— Not running'}
-              </span>
-            </div>
-            <div className="h-1.5 bg-[#1F2937] rounded-full overflow-hidden">
-              <motion.div
-                className="h-full bg-blue-500 rounded-full"
-                animate={{ width: `${progress}%` }}
-                transition={{ duration: 0.25, ease: 'easeOut' }}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* ──────────────────────────────────────────────────────
-            CONSOLE OUTPUT
-            Shows stdout from print() statements and any runtime
-            errors. Automatically scrolled into view when an error
-            is detected (see the useEffect above).
-        ────────────────────────────────────────────────────── */}
-        <div className="px-4 py-3 pb-12" ref={consoleRef}>
-          <div className="bg-[#111827] border border-[#1F2937] rounded-xl overflow-hidden">
-
-            {/* Status header */}
-            <div className="panel-header">
-              <span className="font-mono text-[11px]">Console Output</span>
-              <div className="flex items-center gap-2">
-                {error && <span className="text-red-400  text-[10px] font-mono">● Error</span>}
-                {output && !error && <span className="text-green-400 text-[10px] font-mono">● Output</span>}
-                {!error && !output && <span className="text-gray-600 text-[10px] font-mono">● Idle</span>}
               </div>
             </div>
-
-            {/* Error block */}
-            <AnimatePresence>
-              {error && (
-                <motion.div
-                  className="mx-3 mt-2 bg-red-950/40 border border-red-800/60
-                             rounded-lg p-3 flex items-start gap-3"
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                >
-                  <span className="text-red-400 text-sm shrink-0">⚠</span>
-                  <pre className="text-red-300 text-xs flex-1 overflow-auto whitespace-pre-wrap font-mono">
-                    {error}
-                  </pre>
-                  <button
-                    onClick={() => setError(null)}
-                    className="text-gray-500 hover:text-white shrink-0 text-xs"
-                  >
-                    ✕
-                  </button>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* stdout output */}
-            <div className="px-4 py-3 font-mono text-sm min-h-[3rem]">
-              {!error && output ? (
-                <pre className="text-green-400 whitespace-pre-wrap">{output}</pre>
-              ) : !error ? (
-                <span className="text-gray-600">
-                  No output yet. Run your code to see results here.
-                </span>
-              ) : null}
-            </div>
-
-          </div>
-        </div>
+          </>
+        )}
 
       </div>
 
