@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Base ── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: #1e1e1e;
+  color: #d4d4d4;
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar           { width: 6px; height: 6px; }
+::-webkit-scrollbar-track     { background: #1e1e1e; }
+::-webkit-scrollbar-thumb     { background: #3e3e42; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #007acc; }
+
+/* ── Utility ── */
+.font-mono { font-family: 'Fira Code', Consolas, 'Courier New', monospace; }
+
+.line-active {
+  background: rgba(0, 122, 204, 0.18);
+  border-left: 3px solid #007acc;
+  padding-left: 6px;
+}
+.line-done {
+  background: rgba(78, 201, 176, 0.04);
+}
+
+/* Tab bar item */
+.tab-item {
+  @apply px-4 py-2 text-xs font-mono text-gray-400 border-r border-vs-border
+         hover:text-white hover:bg-vs-surface cursor-pointer transition-colors duration-150;
+}
+.tab-item.active {
+  @apply text-white bg-vs-bg border-t-2 border-t-vs-blue;
+}
+
+/* Glow helpers */
+.glow-blue  { box-shadow: 0 0 12px rgba(0, 122, 204, 0.45); }
+.glow-green { box-shadow: 0 0 12px rgba(78, 201, 176, 0.45); }
+
+/* Range input accent */
+input[type="range"] { accent-color: #007acc; }
+
+/* Panel header */
+.panel-header {
+  @apply flex items-center justify-between px-3 py-2 bg-[#323233]
+         border-b border-vs-border text-xs font-mono text-gray-400 select-none;
+}
