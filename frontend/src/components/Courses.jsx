@@ -164,8 +164,10 @@ function LevelBadge({ level }) {
 function CourseCard({ course, onOpen }) {
   return (
     <motion.div
-      className={`bg-vs-surface border ${course.border}/30 rounded-xl p-5 flex flex-col
-                  hover:border-opacity-80 hover:-translate-y-1 transition-all duration-300 cursor-pointer group`}
+      className={`bg-slate-900/70 border border-slate-700/70 rounded-2xl p-5 flex flex-col
+                  shadow-[0_4px_20px_rgba(0,0,0,0.5)] hover:border-slate-500/70
+                  hover:shadow-[0_8px_32px_rgba(0,0,0,0.65)] hover:-translate-y-1
+                  hover:bg-slate-800/80 transition-all duration-200 cursor-pointer group`}
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}

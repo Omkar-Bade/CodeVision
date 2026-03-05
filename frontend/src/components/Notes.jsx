@@ -292,8 +292,10 @@ const ALL_TAGS = ['All', ...new Set(NOTES.map(n => n.tag))]
 function NoteCard({ note, isOpen, onToggle }) {
   return (
     <motion.div
-      className="bg-vs-surface border border-vs-border rounded-xl overflow-hidden
-                 hover:border-gray-500 transition-colors duration-200"
+      className="bg-slate-900/70 border border-slate-700/70 rounded-2xl overflow-hidden
+                 shadow-[0_4px_20px_rgba(0,0,0,0.5)] hover:border-slate-500/70
+                 hover:shadow-[0_8px_32px_rgba(0,0,0,0.65)] hover:-translate-y-px
+                 transition-all duration-200"
       initial={{ opacity: 0, y: 16 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}

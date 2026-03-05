@@ -4,19 +4,20 @@ export default {
   theme: {
     extend: {
       colors: {
-        'vs-bg':      '#1e1e1e',
-        'vs-surface': '#252526',
-        'vs-panel':   '#2d2d2d',
-        'vs-border':  '#3e3e42',
-        'vs-blue':    '#007acc',
-        'vs-green':   '#4ec9b0',
-        'vs-yellow':  '#dcdcaa',
-        'vs-orange':  '#ce9178',
-        'vs-purple':  '#c586c0',
-        'vs-red':     '#f44747',
-        'vs-text':    '#d4d4d4',
-        'vs-muted':   '#6a9955',
-        'vs-number':  '#b5cea8',
+        // Futuristic tech palette
+        'vs-bg':      '#020617', // deep navy
+        'vs-surface': '#020617',
+        'vs-panel':   '#0b1220',
+        'vs-border':  '#1f2937',
+        'vs-blue':    '#38bdf8', // electric blue
+        'vs-green':   '#4ade80', // accent green
+        'vs-yellow':  '#facc15',
+        'vs-orange':  '#fb923c',
+        'vs-purple':  '#a855f7',
+        'vs-red':     '#f97373',
+        'vs-text':    '#e5e7eb',
+        'vs-muted':   '#6b7280',
+        'vs-number':  '#a5f3fc',
       },
       fontFamily: {
         mono: ['Fira Code', 'Consolas', 'Courier New', 'monospace'],

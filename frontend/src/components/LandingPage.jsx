@@ -127,6 +127,35 @@ function FeatureCard({ icon, title, desc, delay }) {
   )
 }
 
+/* ─── Hero typed subtext ────────────────────────────────────── */
+const HERO_SUBTEXT =
+  'See how programs work internally — variable by variable, line by line.'
+
+function TypedSubtext() {
+  const [visible, setVisible] = useState('')
+
+  useEffect(() => {
+    let idx = 0
+    const interval = setInterval(() => {
+      idx += 1
+      setVisible(HERO_SUBTEXT.slice(0, idx))
+      if (idx >= HERO_SUBTEXT.length) clearInterval(interval)
+    }, 28)
+    return () => clearInterval(interval)
+  }, [])
+
+  return (
+    <p className="text-lg md:text-xl text-slate-300 max-w-2xl mx-auto leading-relaxed font-light">
+      <span className="border-l border-cyan-400/60 pl-3 text-slate-300/90">
+        {visible}
+        {visible.length < HERO_SUBTEXT.length && (
+          <span className="animate-pulse text-cyan-400 ml-0.5">▌</span>
+        )}
+      </span>
+    </p>
+  )
+}
+
 /* ─── Main Page ──────────────────────────────────────────────── */
 export default function LandingPage() {
   const navigate = useNavigate()
@@ -164,27 +193,25 @@ export default function LandingPage() {
         <div className="max-w-5xl mx-auto text-center">
 
           <motion.h1
-            className="text-5xl md:text-7xl font-extrabold leading-tight mb-6 font-sans"
+            className="text-4xl md:text-6xl lg:text-7xl font-extrabold leading-tight mb-6 font-sans"
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.1 }}
           >
-            Visualize Code.{' '}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-vs-blue to-vs-green">
+            <span className="block">Visualize Code.</span>
+            <span className="block text-transparent bg-clip-text bg-gradient-to-r from-vs-blue via-cyan-400 to-vs-green">
               Understand Logic.
             </span>
           </motion.h1>
 
-          <motion.p
-            className="text-xl text-gray-400 mb-10 max-w-2xl mx-auto leading-relaxed"
-            initial={{ opacity: 0, y: 20 }}
+          <motion.div
+            className="mb-10"
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.25 }}
           >
-            Programming becomes easier when you can{' '}
-            <span className="text-vs-yellow font-semibold">see</span> how code actually works
-            — variable by variable, line by line.
-          </motion.p>
+            <TypedSubtext />
+          </motion.div>
 
           <motion.div
             className="flex flex-col sm:flex-row gap-4 justify-center mb-14"
@@ -194,22 +221,20 @@ export default function LandingPage() {
           >
             <motion.button
               onClick={() => navigate('/visualizer')}
-              className="px-8 py-4 bg-vs-blue hover:bg-blue-500 text-white rounded-lg
-                         font-semibold text-lg shadow-blue-glow transition-all duration-200"
-              whileHover={{ scale: 1.05, boxShadow: '0 0 25px rgba(0,122,204,0.6)' }}
-              whileTap={{ scale: 0.96 }}
+              className="neon-btn neon-btn-primary px-9 py-3.5 text-base"
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
             >
-              Start Visualizing →
+              <span className="text-lg">▶</span>
+              <span>Start Visualizing</span>
             </motion.button>
             <motion.button
-              onClick={() => navigate('/tutorials')}
-              className="px-8 py-4 bg-transparent border border-vs-border hover:border-vs-blue
-                         text-vs-text hover:text-white rounded-lg font-semibold text-lg
-                         transition-all duration-200"
+              onClick={() => navigate('/notes')}
+              className="neon-btn neon-btn-muted px-8 py-3.5 text-base"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.96 }}
             >
-              View Tutorials
+              Explore Concepts
             </motion.button>
           </motion.div>
 
@@ -326,14 +351,10 @@ export default function LandingPage() {
                     <span className="text-vs-yellow font-mono font-semibold">a</span>
                     <span className="text-vs-number font-mono font-bold text-lg">5</span>
                   </div>
-                  <motion.div
-                    className="bg-vs-bg border border-vs-blue/60 rounded-lg p-3 flex justify-between items-center shadow-blue-glow"
-                    animate={{ borderColor: ['rgba(0,122,204,0.3)', 'rgba(0,122,204,0.9)', 'rgba(0,122,204,0.3)'] }}
-                    transition={{ duration: 1.5, repeat: Infinity }}
-                  >
+                  <div className="bg-vs-bg border border-sky-500/50 rounded-lg p-3 flex justify-between items-center">
                     <span className="text-vs-yellow font-mono font-semibold">b</span>
                     <span className="text-vs-blue font-mono font-bold text-lg">5</span>
-                  </motion.div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -360,10 +381,10 @@ export default function LandingPage() {
           </p>
           <motion.button
             onClick={() => navigate('/visualizer')}
-            className="px-12 py-5 bg-vs-blue text-white rounded-xl font-bold text-xl
-                       shadow-blue-glow hover:bg-blue-500 transition-colors duration-200"
-            whileHover={{ scale: 1.06, boxShadow: '0 0 30px rgba(0,122,204,0.7)' }}
-            whileTap={{ scale: 0.96 }}
+            className="px-12 py-4 bg-sky-600 hover:bg-sky-500 text-white rounded-xl font-bold text-lg
+                       shadow-[0_4px_16px_rgba(0,0,0,0.4)] transition-colors duration-200"
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
           >
             Launch Visualizer →
           </motion.button>

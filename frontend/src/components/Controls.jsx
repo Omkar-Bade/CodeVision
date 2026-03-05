@@ -3,11 +3,11 @@ import { motion } from 'framer-motion'
 
 /* ─── Reusable Btn ─────────────────────────────────────────── */
 function Btn({ onClick, disabled, title, variant = 'default', children }) {
-  const base = 'px-3 py-1.5 rounded text-sm font-mono transition-all duration-150 select-none'
+  const base = 'neon-btn text-xs sm:text-sm'
   const variants = {
-    primary: 'bg-vs-blue hover:bg-blue-500 text-white disabled:opacity-40 disabled:cursor-not-allowed',
-    danger:  'bg-red-800/30 hover:bg-red-700/40 text-red-400 border border-red-700/40 disabled:opacity-40',
-    default: 'bg-vs-surface hover:bg-vs-border text-vs-text border border-vs-border disabled:opacity-40 disabled:cursor-not-allowed',
+    primary: 'neon-btn-primary',
+    danger:  'neon-btn-danger',
+    default: 'neon-btn-muted',
   }
   return (
     <motion.button
@@ -38,6 +38,7 @@ export default function Controls({
   useEffect(() => {
     const handler = (e) => {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return
+      if (e.target.closest?.('.monaco-editor')) return   // let Monaco handle all its own keys
       if (e.code === 'Space')       { e.preventDefault(); isRunning ? onPause() : onRun() }
       if (e.code === 'ArrowRight')  { e.preventDefault(); if (!atEnd)   onNext() }
       if (e.code === 'ArrowLeft')   { e.preventDefault(); if (!atStart) onPrev() }
@@ -59,7 +60,7 @@ export default function Controls({
   }
 
   return (
-    <div className="bg-vs-surface px-4 py-3 space-y-2">
+    <div className="glass-soft px-4 py-3 space-y-2">
       {/* Progress bar */}
       <div>
         <div className="flex justify-between text-xs text-gray-500 mb-1 font-mono">
@@ -77,14 +78,14 @@ export default function Controls({
 
       {/* Buttons + Speed */}
       <div className="flex items-center gap-2 flex-wrap">
-        <Btn onClick={onReset} title="Reset (Ctrl+R)" variant="danger">
-          ↺ Reset
+        <Btn onClick={onReset} title="Restart (Ctrl+R)" variant="danger">
+          🔁 Restart
         </Btn>
 
         <div className="h-5 w-px bg-vs-border" />
 
         <Btn onClick={onPrev} disabled={atStart || totalSteps === 0} title="Previous Step (←)">
-          ◄ Prev
+          ⏮ Step Back
         </Btn>
 
         {isRunning ? (
@@ -103,7 +104,7 @@ export default function Controls({
         )}
 
         <Btn onClick={onNext} disabled={atEnd || totalSteps === 0} title="Next Step (→)">
-          Next ►
+          ⏭ Step
         </Btn>
 
         <div className="h-5 w-px bg-vs-border" />

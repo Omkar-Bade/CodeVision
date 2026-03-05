@@ -38,7 +38,7 @@ export default function ExecutionPanel({ code, steps, currentStepIndex }) {
         {step ? (
           <motion.div
             key={currentStepIndex}
-            className="mx-3 mt-3 bg-vs-blue/10 border border-vs-blue/35 rounded-lg p-3"
+            className="mx-3 mt-3 rounded-xl p-3 bg-slate-800/80 border border-slate-600/60 shadow-[0_2px_12px_rgba(0,0,0,0.5)]"
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 8 }}
@@ -121,7 +121,7 @@ export default function ExecutionPanel({ code, steps, currentStepIndex }) {
                   ${i < currentStepIndex
                     ? 'bg-vs-green/20 text-vs-green'
                     : i === currentStepIndex
-                    ? 'bg-vs-blue text-white shadow-blue-glow'
+                    ? 'bg-sky-600 text-white'
                     : 'bg-vs-border text-gray-600'}`}
               >
                 {s.line}
