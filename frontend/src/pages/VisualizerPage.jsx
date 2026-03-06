@@ -97,6 +97,9 @@ export default function VisualizerPage() {
   // saveStatus – feedback state for the Save Code button
   const [saveStatus, setSaveStatus] = useState('idle') // 'idle' | 'saving' | 'saved' | 'error'
 
+  // inputValues – comma-separated string of values fed to input() calls during execution
+  const [inputValues, setInputValues] = useState('')
+
   // intervalRef  – holds the setInterval ID for auto-play; cleared on pause/reset
   // consoleRef   – DOM ref used to scroll the console into view on error
   const intervalRef = useRef(null)
@@ -110,6 +113,8 @@ export default function VisualizerPage() {
   // sliderVal     – converts the ms delay back to a 0-100 slider position
   const currentMemory = currentStepIndex >= 0 ? (steps[currentStepIndex]?.memory ?? {}) : {}
   const prevMemory    = currentStepIndex >  0 ? (steps[currentStepIndex - 1]?.memory ?? {}) : {}
+  const currentScope  = currentStepIndex >= 0 ? (steps[currentStepIndex]?.scope ?? 'global') : 'global'
+  const callStack     = currentStepIndex >= 0 ? (steps[currentStepIndex]?.call_stack ?? []) : []
   const progress      = steps.length > 0 ? ((currentStepIndex + 1) / steps.length) * 100 : 0
   const atStart       = currentStepIndex <= 0
   const atEnd         = currentStepIndex >= steps.length - 1
@@ -162,7 +167,10 @@ export default function VisualizerPage() {
     setIsLoading(true); setError(null); setSteps([])
     setCurrentStepIndex(-1); setOutput(''); setStale(false)
     try {
-      const { data } = await axios.post(`${API_URL}/execute`, { code: src })
+      const inputs = inputValues.trim()
+        ? inputValues.split(',').map(s => s.trim())
+        : undefined
+      const { data } = await axios.post(`${API_URL}/execute`, { code: src, inputs })
       const capturedOutput = data.output ?? ''
       setOutput(capturedOutput)
       if (data.error) { setError(data.error); return null }
@@ -321,6 +329,23 @@ export default function VisualizerPage() {
                : '💾 Save Code'}
             </button>
 
+            <div className="w-px h-4 bg-[#374151] shrink-0" />
+
+            {/* Input simulation field — values fed to input() calls */}
+            <div className="flex items-center gap-1.5 shrink-0">
+              <span className="text-xs text-gray-500 font-mono" title="Values for input() calls, comma-separated">⌨️</span>
+              <input
+                type="text"
+                value={inputValues}
+                onChange={e => setInputValues(e.target.value)}
+                placeholder="input values…"
+                title="Comma-separated values fed to input() calls"
+                className="w-28 px-2 py-0.5 text-xs bg-[#0B1120] border border-[#374151]
+                           rounded-md text-gray-300 placeholder-gray-600
+                           focus:outline-none focus:border-blue-500 transition-colors font-mono"
+              />
+            </div>
+
             {/* Stale warning — shown when code was edited after the last run */}
             {stale && (
               <motion.span
@@ -457,7 +482,12 @@ export default function VisualizerPage() {
             {/* Memory Visualization — shows variable names, values and change animations */}
             <Panel defaultSize={hSizes.mem} minSize={20} className="flex flex-col">
               <div className="glass-panel h-full overflow-hidden">
-                <MemoryView memory={currentMemory} prevMemory={prevMemory} />
+                <MemoryView
+                  memory={currentMemory}
+                  prevMemory={prevMemory}
+                  callStack={callStack}
+                  scope={currentScope}
+                />
               </div>
             </Panel>
           </PanelGroup>

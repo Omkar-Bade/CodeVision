@@ -5,40 +5,27 @@
  * showing the name, value, Python type, and memory allocation for each
  * variable at the current execution step.
  *
+ * Now also shows:
+ *   - Call stack visualization when functions are active
+ *   - Scope label (global / function name) per variable group
+ *
  * Data shape received from the backend (per variable):
  *   memory = {
  *     "a": { value: 5,       size_bytes: 28,  type: "int"  },
  *     "b": { value: "hello", size_bytes: 54,  type: "str"  },
- *     "c": { value: [1,2,3], size_bytes: 88,  type: "list" },
- *     ...
  *   }
- *
- * size_bytes is the *shallow* sys.getsizeof() measurement — the bytes
- * CPython allocates for the object itself, not its nested contents.
  */
 
 import { motion, AnimatePresence } from 'framer-motion'
 
-// ── Helper: format bytes → human-readable string ────────────────────────────
-/**
- * Convert a raw byte count to a tidy display string.
- *   0–1023  → "28 B"
- *   ≥ 1024  → "1.2 KB"
- */
+// ── Helpers ────────────────────────────────────────────────────────
+
 function formatBytes(bytes) {
   if (!bytes && bytes !== 0) return '? B'
   if (bytes < 1024) return `${bytes} B`
   return `${(bytes / 1024).toFixed(1)} KB`
 }
 
-// ── Helper: choose badge colour based on memory size ────────────────────────
-/**
- * Returns a Tailwind colour class set so users can visually gauge
- * how "heavy" a variable is relative to others:
- *   small  (< 100 B)   → green
- *   medium (100–500 B) → yellow
- *   large  (> 500 B)   → orange
- */
 function sizeColour(bytes) {
   if (!bytes) return 'text-gray-500 bg-transparent border-[#374151]'
   if (bytes < 100)  return 'text-green-400  bg-green-900/20  border-green-700/50'
@@ -46,11 +33,6 @@ function sizeColour(bytes) {
   return                   'text-orange-400 bg-orange-900/20 border-orange-700/50'
 }
 
-// ── Helper: pick a display colour based on the Python type name ──────────────
-/**
- * Each Python type gets its own accent colour so variables are
- * immediately distinguishable by type at a glance.
- */
 function typeColour(typeName) {
   switch (typeName) {
     case 'int':      return 'text-blue-400   bg-blue-900/20   border-blue-700/50'
@@ -66,7 +48,6 @@ function typeColour(typeName) {
   }
 }
 
-// ── Helper: value display colour (for the large value text) ─────────────────
 function valueColor(typeName) {
   switch (typeName) {
     case 'int':
@@ -80,7 +61,6 @@ function valueColor(typeName) {
   }
 }
 
-// ── Helper: stringify a value for display ───────────────────────────────────
 function displayValue(v) {
   if (v === null || v === undefined) return 'None'
   if (typeof v === 'string') return `"${v}"`
@@ -89,18 +69,51 @@ function displayValue(v) {
   return String(v)
 }
 
-// ── MemoryBox ─────────────────────────────────────────────────────────────────
-/**
- * A single animated variable card.
- *
- * Props:
- *   name       — variable name (string)
- *   entry      — { value, size_bytes, type }
- *   isNew      — true if the variable appeared for the first time this step
- *   isChanged  — true if the variable's value changed this step
- */
+// ── CallStack visualization ─────────────────────────────────────
+
+function CallStack({ callStack }) {
+  if (!callStack || callStack.length === 0) return null
+
+  return (
+    <div className="mx-3 mb-2">
+      <div className="text-[10px] text-gray-500 font-mono tracking-widest mb-1.5">
+        CALL STACK
+      </div>
+      <div className="flex flex-col gap-1">
+        {[...callStack].reverse().map((frame, i) => {
+          const varCount = Object.keys(frame.locals ?? {}).length
+          return (
+            <motion.div
+              key={`${frame.name}-${i}`}
+              className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg border text-xs font-mono
+                ${i === 0
+                  ? 'bg-blue-900/20 border-blue-700/40 text-blue-300'
+                  : 'bg-[#0B1120] border-[#1F2937] text-gray-400'
+                }`}
+              initial={{ opacity: 0, x: -8 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: i * 0.05 }}
+            >
+              <div className="flex items-center gap-2">
+                <span className={`text-[10px] ${i === 0 ? 'text-blue-400' : 'text-gray-600'}`}>
+                  {i === 0 ? '▶' : '│'}
+                </span>
+                <span className="font-semibold">{frame.name}()</span>
+              </div>
+              <span className="text-[10px] text-gray-500">
+                {varCount} var{varCount !== 1 ? 's' : ''}
+              </span>
+            </motion.div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// ── MemoryBox ─────────────────────────────────────────────────────
+
 function MemoryBox({ name, entry, isNew, isChanged }) {
-  // Gracefully handle the old flat-value format from a cached run
   const value      = entry?.value      ?? entry
   const sizeBytes  = entry?.size_bytes ?? null
   const typeName   = entry?.type       ?? (Array.isArray(value) ? 'list' : typeof value)
@@ -132,22 +145,13 @@ function MemoryBox({ name, entry, isNew, isChanged }) {
       transition={{ type: 'spring', stiffness: 320, damping: 28 }}
       className={`bg-[#111827] border ${borderClass} rounded-xl p-3.5 mb-2.5`}
     >
-      {/* ── Row 1: status badge  ·  type pill  ·  memory size ── */}
       <div className="flex items-center justify-between mb-2.5 gap-2">
-
-        {/* Left: NEW / UPDATED badge (or empty spacer) */}
         <div className="min-w-[3rem]">{statusBadge}</div>
-
-        {/* Right: type + memory size */}
         <div className="flex items-center gap-1.5 flex-wrap justify-end">
-
-          {/* Python type badge — colour-coded by type */}
           <span className={`text-[10px] font-mono font-semibold px-2 py-0.5
                             rounded-full border ${typeColour(typeName)}`}>
             {typeName}
           </span>
-
-          {/* Memory allocation badge — colour-coded by size */}
           {sizeBytes !== null && (
             <span
               title={`sys.getsizeof() = ${sizeBytes} bytes (shallow CPython allocation)`}
@@ -160,14 +164,10 @@ function MemoryBox({ name, entry, isNew, isChanged }) {
         </div>
       </div>
 
-      {/* ── Row 2: variable name  ←→  value ── */}
       <div className="flex items-center justify-between gap-4">
-
         <span className="text-blue-400 font-mono font-semibold text-sm tracking-wide shrink-0">
           {name}
         </span>
-
-        {/* Value — animates with a scale pop when it changes */}
         <motion.span
           key={displayValue(value)}
           className={`font-mono font-bold text-lg truncate max-w-[60%] ${valueColor(typeName)}`}
@@ -192,11 +192,8 @@ function MemoryBox({ name, entry, isNew, isChanged }) {
   )
 }
 
-// ── MemoryDiagram ─────────────────────────────────────────────────────────────
-/**
- * Compact reference diagram shown at the bottom of the panel.
- * Displays each variable as a box → arrow → label for a CS textbook feel.
- */
+// ── MemoryDiagram ──────────────────────────────────────────────────
+
 function MemoryDiagram({ entries }) {
   if (entries.length === 0) return null
   return (
@@ -231,22 +228,33 @@ function MemoryDiagram({ entries }) {
   )
 }
 
-// ── Main Component ────────────────────────────────────────────────────────────
-export default function MemoryView({ memory, prevMemory }) {
+// ── Main Component ─────────────────────────────────────────────────
+
+export default function MemoryView({ memory, prevMemory, callStack, scope }) {
   const entries     = Object.entries(memory     ?? {})
   const prevEntries = prevMemory ?? {}
 
-  // Total memory in use — sum of all shallow sizes
   const totalBytes = entries.reduce((sum, [, entry]) => {
     return sum + (entry?.size_bytes ?? 0)
   }, 0)
 
+  const scopeLabel = scope && scope !== 'global'
+    ? `${scope}() — local`
+    : 'Global Memory'
+
   return (
     <div className="h-full flex flex-col">
-
       {/* Panel header */}
       <div className="panel-header">
-        <span>Memory State</span>
+        <div className="flex items-center gap-2">
+          <span>Memory State</span>
+          {scope && scope !== 'global' && (
+            <span className="text-[10px] font-mono text-blue-400 bg-blue-900/20
+                             border border-blue-700/50 rounded px-1.5 py-0.5">
+              {scope}()
+            </span>
+          )}
+        </div>
         <div className="flex items-center gap-2">
           <span className="text-gray-500 text-[10px] font-mono">
             {entries.length} var{entries.length !== 1 ? 's' : ''}
@@ -263,8 +271,20 @@ export default function MemoryView({ memory, prevMemory }) {
         </div>
       </div>
 
+      {/* Call stack (shown when functions are active) */}
+      <CallStack callStack={callStack} />
+
+      {/* Scope label */}
+      {entries.length > 0 && (
+        <div className="mx-3 mb-1">
+          <span className="text-[10px] font-mono text-gray-500 tracking-widest uppercase">
+            {scopeLabel}
+          </span>
+        </div>
+      )}
+
       {/* Variable cards */}
-      <div className="flex-1 overflow-auto px-3 pt-3 pb-1 min-h-0">
+      <div className="flex-1 overflow-auto px-3 pt-1 pb-1 min-h-0">
         {entries.length === 0 ? (
           <div className="h-full flex items-center justify-center">
             <div className="text-center">
@@ -278,7 +298,6 @@ export default function MemoryView({ memory, prevMemory }) {
         ) : (
           <AnimatePresence>
             {entries.map(([name, entry]) => {
-              // Compare serialized values to detect changes between steps
               const prevEntry  = prevEntries[name]
               const isNew      = !(name in prevEntries)
               const isChanged  = !isNew &&
