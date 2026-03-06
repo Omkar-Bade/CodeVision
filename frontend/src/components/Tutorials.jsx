@@ -1,193 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import Navbar from './Navbar'
-
-const TUTORIALS = [
-  {
-    id: 'var-assignment',
-    icon: '📦',
-    title: 'Variable Assignment',
-    category: 'Basics',
-    difficulty: 'Beginner',
-    time: '2 min',
-    desc: 'See how Python assigns values to variables and what happens in memory when you copy one variable into another.',
-    explanation: [
-      'Line 1: Python creates a memory slot named "a" and stores 5 in it.',
-      'Line 2: Python reads the value of "a" (which is 5) and stores a copy in a new slot called "b".',
-      'Line 3: Python updates "a" to hold 10. Notice that "b" is NOT affected — it has its own copy of the value 5.',
-      'Line 4: Both variables are printed showing their independent values.',
-    ],
-    code: `a = 5
-b = a
-a = 10
-print(a, b)`,
-    output: '10 5',
-  },
-  {
-    id: 'swap',
-    icon: '🔄',
-    title: 'Swapping Variables',
-    category: 'Basics',
-    difficulty: 'Beginner',
-    time: '2 min',
-    desc: 'Learn the classic variable swap pattern and Python\'s elegant tuple-unpacking shortcut.',
-    explanation: [
-      'Line 1-2: Set up two variables x and y.',
-      'Line 3: Use a temporary variable "temp" to save x\'s value before overwriting it.',
-      'Line 4: Assign y\'s value to x.',
-      'Line 5: Assign temp (original x) to y. The swap is complete!',
-      'Alternatively: Python lets you swap in one line: x, y = y, x',
-    ],
-    code: `x = 10
-y = 20
-temp = x
-x = y
-y = temp
-print(x, y)`,
-    output: '20 10',
-  },
-  {
-    id: 'loop-sum',
-    icon: '🔁',
-    title: 'Loop: Sum of Numbers',
-    category: 'Loops',
-    difficulty: 'Beginner',
-    time: '3 min',
-    desc: 'Use a for loop with range() to accumulate a running total. Watch the "total" variable grow step by step.',
-    explanation: [
-      'Line 1: Initialize total to 0 — this is our accumulator.',
-      'Lines 2-3: Loop runs for i = 1, 2, 3, 4, 5.',
-      'Each iteration: total = total + i (add current i to running sum).',
-      'After loop: total holds 1+2+3+4+5 = 15.',
-      'Watch how total grows: 0 → 1 → 3 → 6 → 10 → 15.',
-    ],
-    code: `total = 0
-for i in range(1, 6):
-    total = total + i
-print("Sum:", total)`,
-    output: 'Sum: 15',
-  },
-  {
-    id: 'fibonacci',
-    icon: '🌀',
-    title: 'Fibonacci Sequence',
-    category: 'Loops',
-    difficulty: 'Beginner',
-    time: '4 min',
-    desc: 'Generate Fibonacci numbers using two variables. Observe the classic "rolling update" pattern.',
-    explanation: [
-      'Line 1-2: Start with a=0 and b=1 (first two Fibonacci numbers).',
-      'Each iteration: compute c = a + b (next number), then shift: a becomes b, b becomes c.',
-      'After 6 iterations: 0, 1, 1, 2, 3, 5, 8, 13...',
-      'This is the "rolling window" pattern — we only need two variables at a time.',
-    ],
-    code: `a = 0
-b = 1
-for _ in range(7):
-    c = a + b
-    a = b
-    b = c
-print(b)`,
-    output: '21',
-  },
-  {
-    id: 'conditional-grade',
-    icon: '🔀',
-    title: 'Grade Calculator',
-    category: 'Conditionals',
-    difficulty: 'Beginner',
-    time: '3 min',
-    desc: 'Use if/elif/else to convert a numeric score into a letter grade. Follow the decision tree.',
-    explanation: [
-      'Line 1: Set the score to 85.',
-      'Line 2-3: Check if score >= 90. It\'s not (85 < 90), so skip this block.',
-      'Line 4-5: Check elif score >= 75. Yes! 85 >= 75, so grade = "B".',
-      'The else block is skipped entirely.',
-      'Only ONE branch executes — the first true condition wins.',
-    ],
-    code: `score = 85
-if score >= 90:
-    grade = "A"
-elif score >= 75:
-    grade = "B"
-elif score >= 60:
-    grade = "C"
-else:
-    grade = "F"
-print("Grade:", grade)`,
-    output: 'Grade: B',
-  },
-  {
-    id: 'countdown',
-    icon: '⏱',
-    title: 'While Loop Countdown',
-    category: 'Loops',
-    difficulty: 'Beginner',
-    time: '2 min',
-    desc: 'A while loop that counts down and stops when the condition becomes false.',
-    explanation: [
-      'Line 1: n starts at 5.',
-      'Each iteration: print n, then subtract 1 (n -= 1).',
-      'Loop condition "n > 0" is checked before each iteration.',
-      'When n becomes 0, the condition is False and the loop exits.',
-      'Watch n decrease: 5 → 4 → 3 → 2 → 1 → 0 (exit).',
-    ],
-    code: `n = 5
-while n > 0:
-    print(n)
-    n = n - 1
-print("Blast off!")`,
-    output: '5\n4\n3\n2\n1\nBlast off!',
-  },
-  {
-    id: 'string-ops',
-    icon: '💬',
-    title: 'String Operations',
-    category: 'Strings',
-    difficulty: 'Beginner',
-    time: '3 min',
-    desc: 'Explore common string manipulations: concatenation, upper/lower case, and length.',
-    explanation: [
-      'Line 1: name = "Alice" — a string variable.',
-      'Line 2: Concatenate two strings with + operator.',
-      'Line 3: len() returns the number of characters.',
-      'Line 4: upper() returns a new string — original is unchanged.',
-      'Strings in Python are immutable: methods return new strings.',
-    ],
-    code: `name = "Alice"
-greeting = "Hello, " + name
-length = len(name)
-upper = name.upper()
-print(greeting)
-print(length)
-print(upper)`,
-    output: 'Hello, Alice\n5\nALICE',
-  },
-  {
-    id: 'nested-loop',
-    icon: '⬛',
-    title: 'Nested Loop: Multiplication Table',
-    category: 'Loops',
-    difficulty: 'Intermediate',
-    time: '4 min',
-    desc: 'Use nested for loops to build a multiplication table. Watch both loop variables change.',
-    explanation: [
-      'Outer loop: i goes from 1 to 3.',
-      'Inner loop: for each i, j goes from 1 to 3.',
-      'The inner loop runs completely for each value of i.',
-      'Total iterations: 3 × 3 = 9.',
-      'Watch how i stays constant while j cycles through 1, 2, 3.',
-    ],
-    code: `for i in range(1, 4):
-    for j in range(1, 4):
-        product = i * j
-        print(i, "x", j, "=", product)`,
-    output: '1 x 1 = 1\n1 x 2 = 2\n...',
-  },
-]
-
-const CATEGORIES = ['All', ...new Set(TUTORIALS.map(t => t.category))]
+import { fetchTutorials } from '../api'
 
 /* ─── DifficultyBadge ─────────────────────────────────────── */
 function DifficultyBadge({ level }) {
@@ -203,6 +18,8 @@ function DifficultyBadge({ level }) {
 
 /* ─── TutorialCard ────────────────────────────────────────── */
 function TutorialCard({ tut, onExpand, isExpanded, onRun }) {
+  const id = tut._id
+
   return (
     <motion.div
       className="bg-[#111827] border border-[#1F2937] rounded-xl overflow-hidden
@@ -215,19 +32,19 @@ function TutorialCard({ tut, onExpand, isExpanded, onRun }) {
       <div className="p-5">
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="flex items-center gap-3">
-            <span className="text-3xl">{tut.icon}</span>
+            <span className="text-3xl">{tut.icon || '💡'}</span>
             <div>
               <h3 className="text-white font-semibold">{tut.title}</h3>
               <div className="flex items-center gap-2 mt-1">
-                <DifficultyBadge level={tut.difficulty} />
-                <span className="text-xs text-gray-500 font-mono">{tut.category}</span>
+                <DifficultyBadge level={tut.level} />
+                <span className="text-xs text-gray-500 font-mono">{tut.topic}</span>
                 <span className="text-xs text-gray-500 font-mono">⏱ {tut.time}</span>
               </div>
             </div>
           </div>
         </div>
 
-        <p className="text-gray-400 text-sm mb-4 leading-relaxed">{tut.desc}</p>
+        <p className="text-gray-400 text-sm mb-4 leading-relaxed">{tut.description}</p>
 
         <div className="flex items-center gap-2">
           <button
@@ -238,7 +55,7 @@ function TutorialCard({ tut, onExpand, isExpanded, onRun }) {
             ▶ Run in Visualizer
           </button>
           <button
-            onClick={() => onExpand(tut.id)}
+            onClick={() => onExpand(id)}
             className="px-3 py-2 bg-transparent border border-[#374151] hover:border-gray-500
                        text-gray-400 hover:text-white rounded-lg text-sm transition-colors"
           >
@@ -264,13 +81,13 @@ function TutorialCard({ tut, onExpand, isExpanded, onRun }) {
                   STEP-BY-STEP EXPLANATION
                 </h4>
                 <ol className="space-y-2">
-                  {tut.explanation.map((e, i) => (
+                  {(tut.explanation || []).map((step, i) => (
                     <li key={i} className="flex gap-2 text-sm text-gray-300">
                       <span className="shrink-0 w-5 h-5 rounded-full bg-blue-600/20 text-blue-400
                                        text-xs flex items-center justify-center font-mono mt-0.5">
                         {i + 1}
                       </span>
-                      {e}
+                      {step}
                     </li>
                   ))}
                 </ol>
@@ -314,11 +131,38 @@ function TutorialCard({ tut, onExpand, isExpanded, onRun }) {
   )
 }
 
+/* ─── Skeleton loader ───────────────────────────────────────── */
+function SkeletonTutorial() {
+  return (
+    <div className="bg-[#111827] border border-[#1F2937] rounded-xl p-5 animate-pulse">
+      <div className="flex items-center gap-3 mb-3">
+        <div className="w-10 h-10 bg-[#1F2937] rounded" />
+        <div>
+          <div className="h-4 bg-[#1F2937] rounded w-40 mb-2" />
+          <div className="h-3 bg-[#1F2937] rounded w-24" />
+        </div>
+      </div>
+      <div className="h-3 bg-[#1F2937] rounded w-full mb-1" />
+      <div className="h-3 bg-[#1F2937] rounded w-5/6" />
+    </div>
+  )
+}
+
 /* ─── Page ─────────────────────────────────────────────────── */
 export default function Tutorials() {
-  const navigate    = useNavigate()
+  const navigate = useNavigate()
+  const [tutorials, setTutorials] = useState([])
   const [expanded,  setExpanded]  = useState(null)
-  const [category,  setCategory]  = useState('All')
+  const [topic,     setTopic]     = useState('All')
+  const [loading,   setLoading]   = useState(true)
+  const [error,     setError]     = useState(null)
+
+  useEffect(() => {
+    fetchTutorials()
+      .then(({ data }) => setTutorials(data))
+      .catch(() => setError('Failed to load tutorials. Is the backend running?'))
+      .finally(() => setLoading(false))
+  }, [])
 
   const toggle = (id) => setExpanded(prev => (prev === id ? null : id))
 
@@ -326,15 +170,18 @@ export default function Tutorials() {
     navigate('/visualizer', { state: { code: tut.code } })
   }
 
-  const visible = category === 'All'
-    ? TUTORIALS
-    : TUTORIALS.filter(t => t.category === category)
+  // Build topic filter options from loaded data
+  const topics = ['All', ...new Set(tutorials.map(t => t.topic).filter(Boolean))]
+
+  const visible = topic === 'All'
+    ? tutorials
+    : tutorials.filter(t => t.topic === topic)
 
   return (
     <div className="min-h-screen bg-[#0B1120] text-[#E5E7EB]">
       <Navbar />
 
-      <div className="max-w-4xl mx-auto px-4 pt-20 pb-16">
+      <div className="max-w-4xl mx-auto px-4 pt-24 pb-16">
         {/* Page header */}
         <motion.div
           className="text-center mb-10"
@@ -355,71 +202,88 @@ export default function Tutorials() {
           </p>
         </motion.div>
 
-        {/* Category filter */}
-        <div className="flex flex-wrap justify-center gap-2 mb-10">
-          {CATEGORIES.map(cat => (
-            <button
-              key={cat}
-              onClick={() => setCategory(cat)}
-              className={`px-4 py-1.5 rounded-lg text-sm transition-colors duration-150 ${
-                category === cat
-                  ? 'bg-blue-600 text-white border border-blue-500'
-                  : 'bg-transparent border border-[#374151] text-gray-400 hover:text-white hover:bg-[#1F2937]'
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
+        {/* Topic filter */}
+        {!loading && !error && (
+          <div className="flex flex-wrap justify-center gap-2 mb-10">
+            {topics.map(cat => (
+              <button
+                key={cat}
+                onClick={() => setTopic(cat)}
+                className={`px-4 py-1.5 rounded-lg text-sm transition-colors duration-150 ${
+                  topic === cat
+                    ? 'bg-blue-600 text-white border border-blue-500'
+                    : 'bg-transparent border border-[#374151] text-gray-400 hover:text-white hover:bg-[#1F2937]'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Stats row */}
-        <div className="flex justify-center gap-8 mb-8 text-center">
-          {[
-            { label: 'Tutorials', value: visible.length },
-            { label: 'Beginner',  value: visible.filter(t => t.difficulty === 'Beginner').length },
-            { label: 'Interactive', value: visible.length },
-          ].map(({ label, value }) => (
-            <div key={label}>
-              <div className="text-2xl font-bold text-white">{value}</div>
-              <div className="text-xs text-gray-500">{label}</div>
-            </div>
-          ))}
-        </div>
+        {!loading && !error && (
+          <div className="flex justify-center gap-8 mb-8 text-center">
+            {[
+              { label: 'Tutorials',   value: visible.length },
+              { label: 'Beginner',    value: visible.filter(t => t.level === 'Beginner').length },
+              { label: 'Interactive', value: visible.length },
+            ].map(({ label, value }) => (
+              <div key={label}>
+                <div className="text-2xl font-bold text-white">{value}</div>
+                <div className="text-xs text-gray-500">{label}</div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Error state */}
+        {error && (
+          <div className="text-center py-12 text-red-400 text-sm">
+            <div className="text-4xl mb-3">⚠</div>
+            <p>{error}</p>
+          </div>
+        )}
 
         {/* Tutorial list */}
         <div className="space-y-4">
-          {visible.map(tut => (
-            <TutorialCard
-              key={tut.id}
-              tut={tut}
-              isExpanded={expanded === tut.id}
-              onExpand={toggle}
-              onRun={runInVisualizer}
-            />
-          ))}
+          {loading
+            ? Array.from({ length: 4 }).map((_, i) => <SkeletonTutorial key={i} />)
+            : visible.map(tut => (
+                <TutorialCard
+                  key={tut._id}
+                  tut={tut}
+                  isExpanded={expanded === tut._id}
+                  onExpand={toggle}
+                  onRun={runInVisualizer}
+                />
+              ))
+          }
         </div>
 
         {/* Bottom CTA */}
-        <motion.div
-          className="mt-12 text-center bg-[#111827] border border-[#1F2937] rounded-xl p-8"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-        >
-          <h3 className="text-xl font-bold text-white mb-2">
-            Ready to visualize your own code?
-          </h3>
-          <p className="text-gray-400 text-sm mb-5">
-            Open the CodeVision Visualizer and type any Python code to see it run.
-          </p>
-          <button
-            onClick={() => navigate('/visualizer')}
-            className="px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg
-                       font-semibold transition-colors duration-150"
+        {!loading && (
+          <motion.div
+            className="mt-12 text-center bg-[#111827] border border-[#1F2937] rounded-xl p-8"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
           >
-            Open Visualizer →
-          </button>
-        </motion.div>
+            <h3 className="text-xl font-bold text-white mb-2">
+              Ready to visualize your own code?
+            </h3>
+            <p className="text-gray-400 text-sm mb-5">
+              Open the CodeVision Visualizer and type any Python code to see it run.
+            </p>
+            <button
+              onClick={() => navigate('/visualizer')}
+              className="px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg
+                         font-semibold transition-colors duration-150"
+            >
+              Open Visualizer →
+            </button>
+          </motion.div>
+        )}
       </div>
     </div>
   )

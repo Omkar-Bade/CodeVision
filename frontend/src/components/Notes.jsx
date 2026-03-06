@@ -1,292 +1,17 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Navbar from './Navbar'
+import { fetchNotes } from '../api'
 
-const NOTES = [
-  {
-    id: 'variables',
-    icon: '📦',
-    title: 'Variables',
-    tag: 'Fundamentals',
-    tagColor: 'text-blue-400 bg-blue-900/20 border-blue-700/50',
-    summary: 'A variable is a named container that stores a value in memory.',
-    content: `
-A **variable** is like a labelled box that holds a value. When you write:
-
-    a = 5
-
-Python:
-  1. Creates a memory slot
-  2. Stores the value 5 inside it
-  3. Labels that slot with the name "a"
-
-You can later read or change the value using the same name.
-
-    a = 5      # a points to 5
-    a = 10     # a now points to 10 (5 still exists briefly)
-
-**Key rules:**
-  • Variable names are case-sensitive (age ≠ Age)
-  • Must start with a letter or underscore
-  • Can contain letters, numbers, underscores
-  • Cannot be a Python keyword (if, for, while…)
-    `,
-    codeExample: `name = "Alice"
-age = 25
-is_student = True
-print(name, age, is_student)`,
-  },
-  {
-    id: 'assignment',
-    icon: '🔁',
-    title: 'Variable Assignment & Copy',
-    tag: 'Fundamentals',
-    tagColor: 'text-blue-400 bg-blue-900/20 border-blue-700/50',
-    summary: 'Assigning one variable to another copies the value, not a reference (for primitives).',
-    content: `
-When you assign one variable to another:
-
-    a = 5
-    b = a    # b gets a COPY of a's value
-
-Changing **a** later does NOT affect **b**:
-
-    a = 10
-    print(b)   # still 5!
-
-This is because integers, floats, strings, and booleans are
-**immutable** — Python creates a new object on reassignment.
-
-**Important:** Lists and dictionaries behave differently —
-they are **mutable** and assignment copies only the reference.
-    `,
-    codeExample: `a = 5
-b = a      # b is a copy
-a = 10     # changing a doesn't affect b
-print(a)   # 10
-print(b)   # 5`,
-  },
-  {
-    id: 'datatypes',
-    icon: '🔢',
-    title: 'Data Types',
-    tag: 'Fundamentals',
-    tagColor: 'text-blue-400 bg-blue-900/20 border-blue-700/50',
-    summary: 'Python has several built-in types: int, float, str, bool, list, dict, tuple, set.',
-    content: `
-Python automatically detects the type of your data:
-
-  | Type    | Example           | Description          |
-  |---------|-------------------|----------------------|
-  | int     | 42, -7, 0         | Whole numbers        |
-  | float   | 3.14, -2.5        | Decimal numbers      |
-  | str     | "hello", 'world'  | Text                 |
-  | bool    | True, False       | Yes/No values        |
-  | list    | [1, 2, 3]         | Ordered collection   |
-  | dict    | {"key": "val"}    | Key-value pairs      |
-  | tuple   | (1, 2, 3)         | Immutable sequence   |
-  | set     | {1, 2, 3}         | Unique collection    |
-
-Use **type()** to check: type(42) → <class 'int'>
-Use **isinstance()** to test: isinstance(42, int) → True
-    `,
-    codeExample: `x = 42
-y = 3.14
-s = "hello"
-b = True
-print(type(x), type(y), type(s), type(b))`,
-  },
-  {
-    id: 'loops',
-    icon: '🔄',
-    title: 'Loops',
-    tag: 'Control Flow',
-    tagColor: 'text-yellow-400 bg-yellow-900/20 border-yellow-700/50',
-    summary: 'Loops repeat a block of code — for loops iterate over sequences, while loops use a condition.',
-    content: `
-**for loop** — iterates a fixed number of times:
-
-    for i in range(5):
-        print(i)   # 0, 1, 2, 3, 4
-
-**while loop** — repeats while condition is True:
-
-    n = 0
-    while n < 5:
-        print(n)
-        n += 1
-
-**Loop control:**
-  • break   — exits the loop immediately
-  • continue — skips to the next iteration
-  • pass    — does nothing (placeholder)
-
-**Tip:** range(start, stop, step) controls the sequence.
-range(0, 10, 2) → 0, 2, 4, 6, 8
-    `,
-    codeExample: `total = 0
-for i in range(1, 6):
-    total = total + i
-print("Sum 1-5:", total)`,
-  },
-  {
-    id: 'conditionals',
-    icon: '🔀',
-    title: 'Conditionals',
-    tag: 'Control Flow',
-    tagColor: 'text-yellow-400 bg-yellow-900/20 border-yellow-700/50',
-    summary: 'if / elif / else let your program choose different code paths based on conditions.',
-    content: `
-Python uses indentation to define code blocks:
-
-    if condition:
-        # runs if condition is True
-    elif other_condition:
-        # runs if first failed and this is True
-    else:
-        # runs if none of the above
-
-**Comparison operators:**
-  ==  equal           !=  not equal
-  <   less than       >   greater than
-  <=  less or equal   >=  greater or equal
-
-**Logical operators:**
-  and  — both must be True
-  or   — at least one must be True
-  not  — reverses True/False
-
-**Ternary expression:**
-  result = "yes" if x > 0 else "no"
-    `,
-    codeExample: `score = 85
-if score >= 90:
-    grade = "A"
-elif score >= 75:
-    grade = "B"
-else:
-    grade = "C"
-print("Grade:", grade)`,
-  },
-  {
-    id: 'functions',
-    icon: '⚙️',
-    title: 'Functions',
-    tag: 'Modular Code',
-    tagColor: 'text-green-400 bg-green-900/20 border-green-700/50',
-    summary: 'Functions are reusable blocks of code that take inputs (parameters) and produce outputs (return values).',
-    content: `
-Define a function with **def**:
-
-    def greet(name):
-        return "Hello, " + name
-
-Call it:
-
-    message = greet("Alice")
-
-**Parameters vs Arguments:**
-  • Parameters: names in the definition  (name)
-  • Arguments: actual values you pass    ("Alice")
-
-**Default parameters:**
-    def power(base, exp=2):
-        return base ** exp
-    power(3)     # 9
-    power(2, 3)  # 8
-
-**Scope:**
-  Variables inside a function are **local** — they don't
-  exist outside the function unless returned.
-    `,
-    codeExample: `def add(a, b):
-    result = a + b
-    return result
-
-x = add(3, 4)
-y = add(10, 20)
-print(x, y)`,
-  },
-  {
-    id: 'lists',
-    icon: '📋',
-    title: 'Lists',
-    tag: 'Collections',
-    tagColor: 'text-orange-400 bg-orange-900/20 border-orange-700/50',
-    summary: 'Lists are ordered, mutable collections that can hold any mix of data types.',
-    content: `
-Create a list with square brackets:
-
-    fruits = ["apple", "banana", "cherry"]
-
-**Indexing:** (starts at 0)
-    fruits[0]    → "apple"
-    fruits[-1]   → "cherry"   (last item)
-
-**Slicing:**
-    fruits[1:3]  → ["banana", "cherry"]
-
-**Common methods:**
-  • append(x)   — add x to the end
-  • insert(i,x) — insert x at position i
-  • remove(x)   — remove first occurrence of x
-  • pop()       — remove and return last item
-  • sort()      — sort in place
-  • len(list)   — length (not a method, a function)
-
-**Iteration:**
-    for fruit in fruits:
-        print(fruit)
-    `,
-    codeExample: `nums = [3, 1, 4, 1, 5, 9]
-nums.append(2)
-nums.sort()
-print(nums)
-print("Length:", len(nums))`,
-  },
-  {
-    id: 'strings',
-    icon: '💬',
-    title: 'Strings',
-    tag: 'Fundamentals',
-    tagColor: 'text-blue-400 bg-blue-900/20 border-blue-700/50',
-    summary: 'Strings are sequences of characters. Python provides rich built-in string operations.',
-    content: `
-Strings can use single or double quotes:
-
-    name = "Alice"
-    greeting = 'Hello'
-
-**Concatenation:**
-    full = greeting + ", " + name   → "Hello, Alice"
-
-**f-strings (modern, recommended):**
-    full = f"Hello, {name}"
-
-**Common methods:**
-  • upper() / lower()     — change case
-  • strip()               — remove whitespace
-  • split(sep)            — split into list
-  • replace(old, new)     — substitute
-  • find(sub)             — index of substring
-  • len(s)                — number of characters
-
-**Indexing & slicing** work like lists:
-    s = "Python"
-    s[0]    → "P"
-    s[-1]   → "n"
-    s[0:3]  → "Pyt"
-    `,
-    codeExample: `msg = "  Hello, World!  "
-clean = msg.strip()
-words = clean.split(", ")
-upper = clean.upper()
-print(words)
-print(upper)`,
-  },
-]
-
-const ALL_TAGS = ['All', ...new Set(NOTES.map(n => n.tag))]
+/* ─── Category badge color map ──────────────────────────────── */
+const CATEGORY_COLORS = {
+  'Fundamentals':  'text-blue-400 bg-blue-900/20 border-blue-700/50',
+  'Control Flow':  'text-yellow-400 bg-yellow-900/20 border-yellow-700/50',
+  'Modular Code':  'text-green-400 bg-green-900/20 border-green-700/50',
+  'Collections':   'text-orange-400 bg-orange-900/20 border-orange-700/50',
+}
+const getCategoryColor = (cat) =>
+  CATEGORY_COLORS[cat] || 'text-gray-400 bg-[#1F2937] border-[#374151]'
 
 /* ─── NoteCard ─────────────────────────────────────────────── */
 function NoteCard({ note, isOpen, onToggle }) {
@@ -303,12 +28,13 @@ function NoteCard({ note, isOpen, onToggle }) {
         onClick={onToggle}
         className="w-full flex items-center gap-4 p-4 text-left"
       >
-        <span className="text-3xl shrink-0">{note.icon}</span>
+        <span className="text-3xl shrink-0">{note.icon || '📄'}</span>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-0.5 flex-wrap">
             <span className="text-white font-semibold">{note.title}</span>
-            <span className={`text-xs px-2 py-0.5 rounded-full border font-mono ${note.tagColor}`}>
-              {note.tag}
+            <span className={`text-xs px-2 py-0.5 rounded-full border font-mono
+                              ${getCategoryColor(note.category)}`}>
+              {note.category}
             </span>
           </div>
           <p className="text-gray-400 text-sm truncate">{note.summary}</p>
@@ -337,7 +63,7 @@ function NoteCard({ note, isOpen, onToggle }) {
               <div>
                 <h3 className="text-blue-400 text-xs font-mono tracking-widest mb-3">EXPLANATION</h3>
                 <pre className="text-gray-300 text-sm whitespace-pre-wrap leading-relaxed font-sans">
-                  {note.content.trim()}
+                  {note.content?.trim()}
                 </pre>
               </div>
 
@@ -358,26 +84,56 @@ function NoteCard({ note, isOpen, onToggle }) {
   )
 }
 
+/* ─── Skeleton loader ───────────────────────────────────────── */
+function SkeletonNote() {
+  return (
+    <div className="bg-[#111827] border border-[#1F2937] rounded-xl p-4 animate-pulse">
+      <div className="flex items-center gap-4">
+        <div className="w-10 h-10 bg-[#1F2937] rounded" />
+        <div className="flex-1">
+          <div className="h-4 bg-[#1F2937] rounded w-1/3 mb-2" />
+          <div className="h-3 bg-[#1F2937] rounded w-2/3" />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 /* ─── Page ─────────────────────────────────────────────────── */
 export default function Notes() {
+  const [notes,   setNotes]   = useState([])
   const [openId,  setOpenId]  = useState(null)
   const [filter,  setFilter]  = useState('All')
   const [search,  setSearch]  = useState('')
+  const [loading, setLoading] = useState(true)
+  const [error,   setError]   = useState(null)
+
+  // Fetch all notes on mount; search/filter applied client-side
+  useEffect(() => {
+    fetchNotes()
+      .then(({ data }) => setNotes(data))
+      .catch(() => setError('Failed to load notes. Is the backend running?'))
+      .finally(() => setLoading(false))
+  }, [])
 
   const toggle = (id) => setOpenId(prev => (prev === id ? null : id))
 
-  const visible = NOTES.filter(n => {
-    const matchTag    = filter === 'All' || n.tag === filter
-    const matchSearch = n.title.toLowerCase().includes(search.toLowerCase()) ||
-                        n.summary.toLowerCase().includes(search.toLowerCase())
-    return matchTag && matchSearch
+  // Build category filter options from loaded data
+  const categories = ['All', ...new Set(notes.map(n => n.category).filter(Boolean))]
+
+  const visible = notes.filter(n => {
+    const matchCat    = filter === 'All' || n.category === filter
+    const matchSearch = !search ||
+      n.title.toLowerCase().includes(search.toLowerCase()) ||
+      (n.summary || '').toLowerCase().includes(search.toLowerCase())
+    return matchCat && matchSearch
   })
 
   return (
     <div className="min-h-screen bg-vs-bg text-vs-text">
       <Navbar />
 
-      <div className="max-w-4xl mx-auto px-4 pt-20 pb-16">
+      <div className="max-w-4xl mx-auto px-4 pt-24 pb-16">
         {/* Page header */}
         <motion.div
           className="text-center mb-10"
@@ -408,8 +164,8 @@ export default function Notes() {
                        text-sm text-gray-200 placeholder-gray-600 focus:outline-none
                        focus:border-blue-600 transition-colors"
           />
-          <div className="flex gap-2">
-            {ALL_TAGS.map(t => (
+          <div className="flex gap-2 flex-wrap">
+            {categories.map(t => (
               <button
                 key={t}
                 onClick={() => setFilter(t)}
@@ -425,24 +181,36 @@ export default function Notes() {
           </div>
         </div>
 
+        {/* Error state */}
+        {error && (
+          <div className="text-center py-12 text-red-400 text-sm">
+            <div className="text-4xl mb-3">⚠</div>
+            <p>{error}</p>
+          </div>
+        )}
+
         {/* Notes list */}
-        {visible.length > 0 ? (
+        {loading ? (
+          <div className="space-y-3">
+            {Array.from({ length: 5 }).map((_, i) => <SkeletonNote key={i} />)}
+          </div>
+        ) : visible.length > 0 ? (
           <div className="space-y-3">
             {visible.map(note => (
               <NoteCard
-                key={note.id}
+                key={note._id}
                 note={note}
-                isOpen={openId === note.id}
-                onToggle={() => toggle(note.id)}
+                isOpen={openId === note._id}
+                onToggle={() => toggle(note._id)}
               />
             ))}
           </div>
-        ) : (
+        ) : !error ? (
           <div className="text-center py-16 text-gray-500">
             <div className="text-4xl mb-3">🔍</div>
             <p>No notes match your search.</p>
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   )
