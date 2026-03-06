@@ -1,77 +1,77 @@
-/**
- * AuthContext.jsx
- *
- * Provides application-wide authentication state:
- *   user     — the logged-in user object (or null)
- *   token    — JWT string (or null)
- *   loading  — true while the initial /auth/me check is in flight
- *
- * Exposed helpers:
- *   loginUser(email, password)  — logs in, stores token, sets user
- *   registerUser(name, email, password)
- *   logoutUser()                — clears token and user state
- */
-
-import { createContext, useContext, useState, useEffect } from 'react'
-import { login, register, getMe } from '../api'
+import { createContext, useContext, useEffect, useState } from 'react'
+import { supabase } from '../lib/supabase'
 
 const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
   const [user,    setUser]    = useState(null)
-  const [token,   setToken]   = useState(() => localStorage.getItem('cv_token'))
+  const [session, setSession] = useState(null)
   const [loading, setLoading] = useState(true)
 
-  // On mount (or token change): try to hydrate the user from the backend
   useEffect(() => {
-    if (!token) { setLoading(false); return }
+    // Load existing session on mount
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session)
+      setUser(session?.user ?? null)
+      setLoading(false)
+    })
 
-    getMe()
-      .then(({ data }) => setUser(data))
-      .catch(() => {
-        // Token is invalid or expired — clear it
-        localStorage.removeItem('cv_token')
-        setToken(null)
+    // Listen for auth state changes (login, logout, token refresh)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session)
+      setUser(session?.user ?? null)
+      setLoading(false)
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
+
+  // ── Sign Up ──────────────────────────────────────────────────
+  // Creates the Supabase Auth user, then upserts a row in `profiles`
+  // so the display name is stored alongside the auth record.
+  const signUp = async ({ name, email, password }) => {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { name } },   // stored in auth.users.raw_user_meta_data
+    })
+    if (error) throw error
+
+    // Upsert profile row (created_at is set by DB default)
+    if (data.user) {
+      await supabase.from('profiles').upsert({
+        id:    data.user.id,
+        name,
+        email: data.user.email,
       })
-      .finally(() => setLoading(false))
-  }, [token])
-
-  // Persist token to localStorage whenever it changes
-  const saveToken = (t) => {
-    if (t) localStorage.setItem('cv_token', t)
-    else   localStorage.removeItem('cv_token')
-    setToken(t)
-  }
-
-  const loginUser = async (email, password) => {
-    const { data } = await login({ email, password })
-    saveToken(data.token)
-    setUser(data.user)
+    }
     return data
   }
 
-  const registerUser = async (name, email, password) => {
-    const { data } = await register({ name, email, password })
-    saveToken(data.token)
-    setUser(data.user)
+  // ── Sign In ───────────────────────────────────────────────────
+  const signIn = async ({ email, password }) => {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+    if (error) throw error
     return data
   }
 
-  const logoutUser = () => {
-    saveToken(null)
-    setUser(null)
+  // ── Sign Out ──────────────────────────────────────────────────
+  const signOut = async () => {
+    const { error } = await supabase.auth.signOut()
+    if (error) throw error
   }
+
+  const value = { user, session, loading, signUp, signIn, signOut }
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, loginUser, registerUser, logoutUser }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   )
 }
 
-// Custom hook for convenience
 export function useAuth() {
   const ctx = useContext(AuthContext)
-  if (!ctx) throw new Error('useAuth must be used inside <AuthProvider>')
+  if (!ctx) throw new Error('useAuth must be used inside AuthProvider')
   return ctx
 }
