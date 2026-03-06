@@ -1,5 +1,4 @@
-import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
+import { Link, useLocation } from 'react-router-dom'
 
 const NAV_ITEMS = [
   { label: 'Home',       path: '/'           },
@@ -10,14 +9,7 @@ const NAV_ITEMS = [
 ]
 
 export default function Navbar() {
-  const { pathname }    = useLocation()
-  const navigate        = useNavigate()
-  const { user, logoutUser } = useAuth()
-
-  const handleLogout = () => {
-    logoutUser()
-    navigate('/')
-  }
+  const { pathname } = useLocation()
 
   return (
     <nav className="fixed top-0 inset-x-0 z-50 h-16 flex items-center
@@ -47,50 +39,6 @@ export default function Navbar() {
               </Link>
             )
           })}
-        </div>
-
-        {/* Auth section */}
-        <div className="flex items-center gap-2">
-          {user ? (
-            <>
-              {/* User info chip */}
-              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg
-                              bg-[#1F2937] border border-[#374151] text-sm">
-                <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center
-                                text-white text-xs font-bold shrink-0">
-                  {user.name?.charAt(0).toUpperCase()}
-                </div>
-                <span className="text-gray-300 max-w-[100px] truncate">{user.name}</span>
-              </div>
-
-              {/* Logout button */}
-              <button
-                onClick={handleLogout}
-                className="px-3 py-1.5 text-sm text-gray-400 border border-[#374151]
-                           rounded-lg hover:bg-[#1F2937] hover:text-white
-                           transition-colors duration-150"
-              >
-                Sign Out
-              </button>
-            </>
-          ) : (
-            <>
-              <Link
-                to="/login"
-                className="px-3 py-1.5 text-sm text-gray-400 hover:text-white
-                           transition-colors duration-150"
-              >
-                Sign In
-              </Link>
-              <Link
-                to="/register"
-                className="px-3 py-1.5 text-sm text-white bg-blue-600 hover:bg-blue-500
-                           rounded-lg transition-colors duration-150"
-              >
-                Sign Up
-              </Link>
-            </>
-          )}
         </div>
       </div>
     </nav>

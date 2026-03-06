@@ -14,6 +14,9 @@ router.get('/', async (req, res) => {
     const courses = await Course.find(filter).sort('order')
     res.json(courses)
   } catch (err) {
+    if (err.name === 'MongoNotConnectedError' || err.name === 'MongoServerSelectionError') {
+      return res.status(503).json({ error: 'MongoDB is not running. Install MongoDB or use Atlas — see README.' })
+    }
     res.status(500).json({ error: err.message })
   }
 })

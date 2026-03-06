@@ -10,8 +10,9 @@ async function connectDB() {
     const conn = await mongoose.connect(process.env.MONGO_URI)
     console.log(`MongoDB connected: ${conn.connection.host}`)
   } catch (err) {
-    console.error(`MongoDB connection error: ${err.message}`)
-    process.exit(1)
+    console.warn(`⚠  MongoDB not available: ${err.message}`)
+    console.warn('   Auth and data APIs will not work, but /api/visualize still works.')
+    // Don't exit — let the server keep running so the visualizer proxy still works
   }
 }
 
