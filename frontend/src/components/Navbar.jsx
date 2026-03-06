@@ -81,7 +81,7 @@ export default function Navbar() {
               <>
                 <Link to="/login"
                   className="px-3 py-1.5 text-sm text-gray-400 hover:text-white transition-colors duration-150">
-                  Sign In
+                  Log In
                 </Link>
                 <Link to="/register"
                   className="px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-500 text-white rounded-lg

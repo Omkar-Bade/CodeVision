@@ -49,7 +49,7 @@ export default function RegisterPage() {
           </p>
           <Link to="/login"
             className="block w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-semibold text-sm text-center transition-colors">
-            Go to Sign In
+            Go to Log In
           </Link>
         </motion.div>
       </div>
@@ -139,7 +139,7 @@ export default function RegisterPage() {
 
         <p className="text-center text-sm text-gray-500 mt-6">
           Already have an account?{' '}
-          <Link to="/login" className="text-blue-400 hover:underline">Sign in</Link>
+          <Link to="/login" className="text-blue-400 hover:underline">Log in</Link>
         </p>
       </motion.div>
 
