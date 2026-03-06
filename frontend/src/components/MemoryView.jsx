@@ -40,10 +40,10 @@ function formatBytes(bytes) {
  *   large  (> 500 B)   → orange
  */
 function sizeColour(bytes) {
-  if (!bytes) return 'text-slate-400 bg-slate-800/60 border-slate-700/60'
-  if (bytes < 100)  return 'text-emerald-300 bg-emerald-900/30 border-emerald-600/40'
-  if (bytes < 500)  return 'text-yellow-300  bg-yellow-900/30  border-yellow-600/40'
-  return                   'text-orange-300  bg-orange-900/30  border-orange-600/40'
+  if (!bytes) return 'text-gray-500 bg-transparent border-[#374151]'
+  if (bytes < 100)  return 'text-green-400  bg-green-900/20  border-green-700/50'
+  if (bytes < 500)  return 'text-yellow-400 bg-yellow-900/20 border-yellow-700/50'
+  return                   'text-orange-400 bg-orange-900/20 border-orange-700/50'
 }
 
 // ── Helper: pick a display colour based on the Python type name ──────────────
@@ -53,16 +53,16 @@ function sizeColour(bytes) {
  */
 function typeColour(typeName) {
   switch (typeName) {
-    case 'int':      return 'text-sky-300     bg-sky-900/30     border-sky-600/40'
-    case 'float':    return 'text-cyan-300    bg-cyan-900/30    border-cyan-600/40'
-    case 'str':      return 'text-orange-300  bg-orange-900/30  border-orange-600/40'
-    case 'bool':     return 'text-indigo-300  bg-indigo-900/30  border-indigo-600/40'
-    case 'list':     return 'text-yellow-300  bg-yellow-900/30  border-yellow-600/40'
-    case 'dict':     return 'text-purple-300  bg-purple-900/30  border-purple-600/40'
-    case 'set':      return 'text-pink-300    bg-pink-900/30    border-pink-600/40'
-    case 'tuple':    return 'text-lime-300    bg-lime-900/30    border-lime-600/40'
-    case 'NoneType': return 'text-slate-400   bg-slate-800/50   border-slate-600/40'
-    default:         return 'text-gray-300    bg-gray-800/50    border-gray-600/40'
+    case 'int':      return 'text-blue-400   bg-blue-900/20   border-blue-700/50'
+    case 'float':    return 'text-cyan-400   bg-cyan-900/20   border-cyan-700/50'
+    case 'str':      return 'text-orange-400 bg-orange-900/20 border-orange-700/50'
+    case 'bool':     return 'text-violet-400 bg-violet-900/20 border-violet-700/50'
+    case 'list':     return 'text-yellow-400 bg-yellow-900/20 border-yellow-700/50'
+    case 'dict':     return 'text-purple-400 bg-purple-900/20 border-purple-700/50'
+    case 'set':      return 'text-pink-400   bg-pink-900/20   border-pink-700/50'
+    case 'tuple':    return 'text-lime-400   bg-lime-900/20   border-lime-700/50'
+    case 'NoneType': return 'text-gray-500   bg-transparent   border-[#374151]'
+    default:         return 'text-gray-400   bg-transparent   border-[#374151]'
   }
 }
 
@@ -70,13 +70,13 @@ function typeColour(typeName) {
 function valueColor(typeName) {
   switch (typeName) {
     case 'int':
-    case 'float':    return 'text-vs-number'
-    case 'str':      return 'text-vs-orange'
-    case 'bool':     return 'text-[#569cd6]'
+    case 'float':    return 'text-blue-300'
+    case 'str':      return 'text-orange-300'
+    case 'bool':     return 'text-violet-300'
     case 'list':
     case 'tuple':
-    case 'set':      return 'text-vs-yellow'
-    default:         return 'text-vs-text'
+    case 'set':      return 'text-yellow-300'
+    default:         return 'text-gray-200'
   }
 }
 
@@ -105,22 +105,20 @@ function MemoryBox({ name, entry, isNew, isChanged }) {
   const sizeBytes  = entry?.size_bytes ?? null
   const typeName   = entry?.type       ?? (Array.isArray(value) ? 'list' : typeof value)
 
-  // Card border highlights green for new, blue for updated
   const borderClass = isNew
-    ? 'border-emerald-500/60 shadow-[0_2px_12px_rgba(0,0,0,0.5)]'
+    ? 'border-green-700/70'
     : isChanged
-    ? 'border-sky-500/60 shadow-[0_2px_12px_rgba(0,0,0,0.5)]'
-    : 'border-slate-700/80'
+    ? 'border-blue-600/60'
+    : 'border-[#1F2937]'
 
-  // NEW / UPDATED badge shown in the top-left corner
   const statusBadge = isNew ? (
-    <span className="text-[10px] font-bold text-emerald-300 bg-emerald-900/30
-                     border border-emerald-500/40 rounded px-1.5 py-0.5">
+    <span className="text-[10px] font-bold text-green-400 bg-green-900/25
+                     border border-green-700/50 rounded px-1.5 py-0.5">
       NEW
     </span>
   ) : isChanged ? (
-    <span className="text-[10px] font-bold text-sky-300 bg-sky-900/30
-                     border border-sky-500/40 rounded px-1.5 py-0.5">
+    <span className="text-[10px] font-bold text-blue-400 bg-blue-900/25
+                     border border-blue-700/50 rounded px-1.5 py-0.5">
       UPDATED
     </span>
   ) : null
@@ -128,11 +126,11 @@ function MemoryBox({ name, entry, isNew, isChanged }) {
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, scale: 0.85, y: -16 }}
-      animate={{ opacity: 1, scale: 1,    y: 0   }}
-      exit={{ opacity: 0,    scale: 0.75, y: 10  }}
+      initial={{ opacity: 0, scale: 0.9, y: -12 }}
+      animate={{ opacity: 1, scale: 1,   y: 0   }}
+      exit={{ opacity: 0,   scale: 0.85, y: 8   }}
       transition={{ type: 'spring', stiffness: 320, damping: 28 }}
-      className={`bg-slate-900/80 border ${borderClass} rounded-2xl p-3.5 mb-2.5 backdrop-blur-xl`}
+      className={`bg-[#111827] border ${borderClass} rounded-xl p-3.5 mb-2.5`}
     >
       {/* ── Row 1: status badge  ·  type pill  ·  memory size ── */}
       <div className="flex items-center justify-between mb-2.5 gap-2">
@@ -165,8 +163,7 @@ function MemoryBox({ name, entry, isNew, isChanged }) {
       {/* ── Row 2: variable name  ←→  value ── */}
       <div className="flex items-center justify-between gap-4">
 
-        {/* Variable name in VS Code blue */}
-        <span className="text-vs-blue font-mono font-semibold text-sm tracking-wide shrink-0">
+        <span className="text-blue-400 font-mono font-semibold text-sm tracking-wide shrink-0">
           {name}
         </span>
 
@@ -183,12 +180,11 @@ function MemoryBox({ name, entry, isNew, isChanged }) {
         </motion.span>
       </div>
 
-      {/* ── Row 3: address bar — simulates a memory address for educational effect ── */}
-      <div className="mt-2 pt-2 border-t border-slate-700/50 flex items-center justify-between">
-        <span className="text-[10px] text-slate-600 font-mono">
+      <div className="mt-2 pt-2 border-t border-[#1F2937] flex items-center justify-between">
+        <span className="text-[10px] text-gray-600 font-mono">
           addr: 0x{Math.abs(name.split('').reduce((a, c) => a + c.charCodeAt(0), 0xbabe) * 4).toString(16).padStart(4, '0').toUpperCase()}
         </span>
-        <span className="text-[10px] text-slate-600 font-mono">
+        <span className="text-[10px] text-gray-600 font-mono">
           {sizeBytes !== null ? `${sizeBytes} bytes allocated` : ''}
         </span>
       </div>
@@ -204,8 +200,8 @@ function MemoryBox({ name, entry, isNew, isChanged }) {
 function MemoryDiagram({ entries }) {
   if (entries.length === 0) return null
   return (
-    <div className="border-t border-vs-border px-3 py-3 shrink-0">
-      <div className="text-xs text-gray-500 mb-3 font-mono tracking-widest uppercase">
+    <div className="border-t border-[#1F2937] px-3 py-3 shrink-0">
+      <div className="text-[10px] text-gray-500 mb-3 font-mono tracking-widest uppercase">
         Memory Diagram
       </div>
       <div className="flex gap-4 flex-wrap">
@@ -214,19 +210,15 @@ function MemoryDiagram({ entries }) {
           const typeName = entry?.type  ?? typeof value
           return (
             <div key={name} className="flex flex-col items-center gap-1">
-              {/* Value box */}
-              <div className="bg-vs-blue/15 border border-vs-blue/40 rounded-md
+              <div className="bg-blue-600/15 border border-blue-600/40 rounded
                               px-3 py-1 text-xs font-mono text-white min-w-12 text-center">
                 {displayValue(value)}
               </div>
-              {/* Downward arrow */}
-              <div className="w-px h-4 bg-vs-border" />
-              {/* Variable name */}
-              <div className="bg-vs-surface border border-vs-border rounded-md
-                              px-2 py-0.5 text-xs font-mono text-vs-yellow">
+              <div className="w-px h-3 bg-[#374151]" />
+              <div className="bg-[#0B1120] border border-[#374151] rounded
+                              px-2 py-0.5 text-xs font-mono text-yellow-300">
                 {name}
               </div>
-              {/* Type label */}
               <div className={`text-[9px] font-mono px-1.5 py-0.5 rounded border
                                ${typeColour(typeName)}`}>
                 {typeName}
@@ -256,16 +248,14 @@ export default function MemoryView({ memory, prevMemory }) {
       <div className="panel-header">
         <span>Memory State</span>
         <div className="flex items-center gap-2">
-          {/* Variable count */}
           <span className="text-gray-500 text-[10px] font-mono">
             {entries.length} var{entries.length !== 1 ? 's' : ''}
           </span>
-          {/* Total memory usage across all variables */}
           {entries.length > 0 && (
             <span
               title="Total shallow sys.getsizeof() across all variables"
-              className="text-slate-400 text-[10px] font-mono bg-slate-800/70
-                         border border-slate-700/60 px-2 py-0.5 rounded-full"
+              className="text-gray-400 text-[10px] font-mono bg-[#1F2937]
+                         border border-[#374151] px-2 py-0.5 rounded-full"
             >
               {formatBytes(totalBytes)} total
             </span>

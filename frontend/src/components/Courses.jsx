@@ -151,8 +151,8 @@ const COURSES = [
 
 /* ─── Level Badge ────────────────────────────────────────── */
 function LevelBadge({ level }) {
-  const color = level === 'Beginner' ? 'text-vs-green bg-vs-green/10 border-vs-green/30'
-                                     : 'text-vs-yellow bg-vs-yellow/10 border-vs-yellow/30'
+  const color = level === 'Beginner' ? 'text-green-400 bg-green-900/20 border-green-700/50'
+                                     : 'text-yellow-400 bg-yellow-900/20 border-yellow-700/50'
   return (
     <span className={`text-xs font-mono px-2 py-0.5 rounded-full border ${color}`}>
       {level}
@@ -164,14 +164,12 @@ function LevelBadge({ level }) {
 function CourseCard({ course, onOpen }) {
   return (
     <motion.div
-      className={`bg-slate-900/70 border border-slate-700/70 rounded-2xl p-5 flex flex-col
-                  shadow-[0_4px_20px_rgba(0,0,0,0.5)] hover:border-slate-500/70
-                  hover:shadow-[0_8px_32px_rgba(0,0,0,0.65)] hover:-translate-y-1
-                  hover:bg-slate-800/80 transition-all duration-200 cursor-pointer group`}
+      className="bg-[#111827] border border-[#1F2937] rounded-xl p-5 flex flex-col
+                 hover:border-[#374151] hover:-translate-y-1 transition-all duration-200
+                 cursor-pointer group"
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
-      whileHover={{ scale: 1.01 }}
       onClick={() => onOpen(course)}
     >
       <div className="flex items-start justify-between mb-3">
@@ -182,7 +180,7 @@ function CourseCard({ course, onOpen }) {
       <p className="text-gray-400 text-sm mb-4 flex-1 leading-relaxed">{course.desc}</p>
       <div className="flex items-center justify-between mt-auto">
         <span className="text-gray-500 text-xs font-mono">⏱ {course.duration}</span>
-        <span className={`text-xs font-mono text-${course.color} group-hover:underline`}>
+        <span className="text-xs font-mono text-blue-400 group-hover:underline">
           Open Course →
         </span>
       </div>
@@ -202,7 +200,7 @@ function CourseModal({ course, onClose }) {
       onClick={onClose}
     >
       <motion.div
-        className="bg-vs-surface border border-vs-border rounded-2xl w-full max-w-2xl
+        className="bg-[#111827] border border-[#1F2937] rounded-xl w-full max-w-2xl
                    max-h-[85vh] overflow-y-auto"
         initial={{ scale: 0.9, y: 20 }}
         animate={{ scale: 1, y: 0 }}
@@ -210,7 +208,7 @@ function CourseModal({ course, onClose }) {
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-start justify-between p-6 border-b border-vs-border">
+        <div className="flex items-start justify-between p-6 border-b border-[#1F2937]">
           <div className="flex items-center gap-4">
             <span className="text-5xl">{course.icon}</span>
             <div>
@@ -232,8 +230,8 @@ function CourseModal({ course, onClose }) {
             </h3>
             <ul className="space-y-2">
               {course.topics.map((t, i) => (
-                <li key={i} className="flex items-start gap-2 text-sm text-gray-300">
-                  <span className="text-vs-green mt-0.5 shrink-0">✓</span>
+                  <li key={i} className="flex items-start gap-2 text-sm text-gray-300">
+                  <span className="text-green-400 mt-0.5 shrink-0">✓</span>
                   {t}
                 </li>
               ))}
@@ -248,10 +246,10 @@ function CourseModal({ course, onClose }) {
             <div className="space-y-2">
               {course.lessons.map((l, i) => (
                 <div key={i}
-                  className="flex items-center justify-between bg-vs-bg border border-vs-border
+                  className="flex items-center justify-between bg-[#0B1120] border border-[#1F2937]
                              rounded-lg px-3 py-2.5">
                   <div className="flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-full bg-vs-blue/20 text-vs-blue text-xs
+                    <span className="w-5 h-5 rounded-full bg-blue-600/20 text-blue-400 text-xs
                                      flex items-center justify-center font-mono">
                       {i + 1}
                     </span>
@@ -262,7 +260,7 @@ function CourseModal({ course, onClose }) {
               ))}
             </div>
 
-            <div className="mt-4 text-center py-3 bg-vs-bg border border-vs-border rounded-lg">
+            <div className="mt-4 text-center py-3 bg-[#0B1120] border border-[#1F2937] rounded-lg">
               <p className="text-gray-400 text-sm mb-2">Total duration</p>
               <p className="text-white font-bold">{course.duration}</p>
             </div>
@@ -272,8 +270,8 @@ function CourseModal({ course, onClose }) {
         <div className="px-6 pb-6">
           <button
             onClick={onClose}
-            className="w-full py-3 bg-vs-blue hover:bg-blue-500 text-white rounded-lg
-                       font-semibold transition-colors duration-200"
+            className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg
+                       font-semibold transition-colors duration-150"
           >
             Start Learning (Coming Soon)
           </button>
@@ -303,11 +301,11 @@ export default function Courses() {
           animate={{ opacity: 1, y: 0 }}
         >
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full
-                          bg-vs-blue/10 border border-vs-blue/25 text-vs-blue text-sm mb-5">
+                          bg-blue-600/10 border border-blue-600/30 text-blue-400 text-sm mb-5">
             <span>🎓</span> Learning Path
           </div>
           <h1 className="text-4xl font-bold mb-3">
-            Python <span className="text-vs-blue">Courses</span>
+            Python <span className="text-blue-400">Courses</span>
           </h1>
           <p className="text-gray-400 max-w-xl mx-auto">
             Structured courses designed to take you from zero to confident programmer.
@@ -321,10 +319,10 @@ export default function Courses() {
             <button
               key={l}
               onClick={() => setFilter(l)}
-              className={`px-4 py-1.5 rounded-full text-sm transition-colors duration-150 ${
+              className={`px-4 py-1.5 rounded-lg text-sm transition-colors duration-150 ${
                 filter === l
-                  ? 'bg-vs-blue text-white'
-                  : 'bg-vs-surface border border-vs-border text-gray-400 hover:text-white'
+                  ? 'bg-blue-600 text-white border border-blue-500'
+                  : 'bg-transparent border border-[#374151] text-gray-400 hover:text-white hover:bg-[#1F2937]'
               }`}
             >
               {l}

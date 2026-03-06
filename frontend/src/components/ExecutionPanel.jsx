@@ -38,7 +38,7 @@ export default function ExecutionPanel({ code, steps, currentStepIndex }) {
         {step ? (
           <motion.div
             key={currentStepIndex}
-            className="mx-3 mt-3 rounded-xl p-3 bg-slate-800/80 border border-slate-600/60 shadow-[0_2px_12px_rgba(0,0,0,0.5)]"
+            className="mx-3 mt-3 rounded-lg p-3 bg-[#0d1117] border border-[#1F2937]"
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 8 }}
@@ -48,12 +48,12 @@ export default function ExecutionPanel({ code, steps, currentStepIndex }) {
               <span className="text-xs text-gray-400 font-mono">
                 ▶ Executing line {step.line}
               </span>
-              <span className="text-xs text-vs-blue font-mono">
+              <span className="text-xs text-blue-400 font-mono">
                 Step {step.step}/{totalSteps}
               </span>
             </div>
             <div className="font-mono text-sm">
-              <span className="text-vs-yellow">{step.code}</span>
+                  <span className="text-yellow-300">{step.code}</span>
             </div>
           </motion.div>
         ) : totalSteps === 0 ? (
@@ -80,7 +80,7 @@ export default function ExecutionPanel({ code, steps, currentStepIndex }) {
             >
               {/* Line number */}
               <span className={`select-none text-right w-5 shrink-0 text-xs pt-0.5
-                ${active ? 'text-vs-blue' : 'text-gray-600'}`}>
+                ${active ? 'text-blue-400' : 'text-gray-600'}`}>
                 {num}
               </span>
 
@@ -93,7 +93,7 @@ export default function ExecutionPanel({ code, steps, currentStepIndex }) {
               {/* Active arrow */}
               {active && (
                 <motion.span
-                  className="text-vs-blue text-xs shrink-0 pt-0.5"
+                  className="text-blue-400 text-xs shrink-0 pt-0.5"
                   initial={{ opacity: 0, x: -4 }}
                   animate={{ opacity: 1, x: 0 }}
                 >
@@ -107,7 +107,7 @@ export default function ExecutionPanel({ code, steps, currentStepIndex }) {
 
       {/* Step breadcrumbs */}
       {totalSteps > 0 && (
-        <div className="border-t border-vs-border px-3 py-2">
+        <div className="border-t border-[#1F2937] px-3 py-2">
           <div className="text-xs text-gray-500 mb-2 font-mono tracking-widest">
             STEP HISTORY
           </div>
@@ -119,10 +119,10 @@ export default function ExecutionPanel({ code, steps, currentStepIndex }) {
                 className={`w-6 h-6 rounded text-xs flex items-center justify-center font-mono
                   cursor-default transition-colors
                   ${i < currentStepIndex
-                    ? 'bg-vs-green/20 text-vs-green'
+                    ? 'bg-green-500/15 text-green-400'
                     : i === currentStepIndex
-                    ? 'bg-sky-600 text-white'
-                    : 'bg-vs-border text-gray-600'}`}
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-[#1F2937] text-gray-600'}`}
               >
                 {s.line}
               </div>

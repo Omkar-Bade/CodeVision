@@ -13,13 +13,13 @@ export default function CodeEditor({ code, onChange }) {
   return (
     <div className="h-full flex flex-col">
       {/* Tab bar */}
-      <div className="flex items-center border-b border-slate-800/80 bg-slate-900/70 px-3 py-1.5">
-        <div className="tab-item active flex items-center gap-2 rounded-full">
-          <span className="w-2 h-2 rounded-full bg-vs-green animate-pulse" />
+      <div className="flex items-center border-b border-[#1F2937] bg-[#0d1117] px-3 py-1.5">
+        <div className="tab-item active flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-green-500" />
           <span>main.py</span>
         </div>
-        <div className="ml-auto flex items-center gap-2 text-[11px] text-slate-500 font-mono">
-          <span className="h-2 w-2 rounded-full bg-cyan-400/80" />
+        <div className="ml-auto flex items-center gap-2 text-[11px] text-gray-500 font-mono">
+          <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />
           <span>Python 3 · Monaco</span>
         </div>
       </div>
@@ -35,7 +35,7 @@ export default function CodeEditor({ code, onChange }) {
           options={{
             minimap:              { enabled: false },
             fontSize:             14,
-            fontFamily:           '"Fira Code", Consolas, monospace',
+            fontFamily:           '"JetBrains Mono", "Fira Code", Consolas, monospace',
             fontLigatures:        true,
             lineNumbers:          'on',
             lineNumbersMinChars:  3,

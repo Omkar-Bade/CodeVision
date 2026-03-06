@@ -1,26 +1,24 @@
 /*
- * index.css — Global styles for CodeVision
+ * index.css — CodeVision Global Styles
+ * Theme: Professional developer platform  (LeetCode / GitHub style)
  *
- * Structure:
+ * Sections:
  *   1. Tailwind directives
  *   2. Base reset & typography
- *   3. Custom scrollbar
- *   4. Utility classes  (font-mono, line highlight)
+ *   3. Scrollbar
+ *   4. Code / line utilities
  *   5. Tab bar
- *   6. Glassmorphism panels  (.glass-panel, .glass-soft)
- *   7. Control buttons  (.neon-btn-*)
- *   8. Resize handles   (.resize-handle-x, .resize-handle-y)
- *   9. Navigation links (.nav-link, .nav-link-active)
+ *   6. Panel styles  (.dev-panel, .glass-panel alias, .glass-soft alias)
+ *   7. Buttons  (.btn-primary, .btn-secondary, .btn-danger, .neon-btn aliases)
+ *   8. Resize handles
+ *   9. Navigation links
  */
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ── 1. Base reset ─────────────────────────────────────────────
-   Ensure consistent box-sizing and remove default margin/padding
-   so the full-screen layout fills the viewport without overflow.
-────────────────────────────────────────────────────────────── */
+/* ── 1. Base reset ───────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; }
 
 html, body, #root {
@@ -29,161 +27,120 @@ html, body, #root {
   padding: 0;
 }
 
-/* Deep navy radial gradient background — gives the page depth
-   without a flat solid colour.  The gradient fades:
-   slate-800 → near-black navy (#020617) → pure black at edges. */
 body {
-  background: radial-gradient(circle at top, #1f2937 0, #020617 45%, #000000 100%);
-  color: #e5e7eb;
+  background-color: #0B1120;
+  color: #E5E7EB;
   font-family: 'Inter', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;  /* prevent horizontal scroll from stray elements */
+  overflow-x: hidden;
 }
 
-/* Tighten heading tracking for a modern developer-tool feel */
 h1, h2, h3 { letter-spacing: -0.02em; }
-/* Comfortable reading line-height for body copy */
 p          { line-height: 1.6; }
 
-/* ── 2. Custom scrollbar ───────────────────────────────────────
-   Thin, dark scrollbar that matches the navy palette.
-   Falls back to the platform default on non-Webkit browsers.
-────────────────────────────────────────────────────────────── */
+/* ── 2. Scrollbar ────────────────────────────────────────────── */
 ::-webkit-scrollbar             { width: 6px; height: 6px; }
-::-webkit-scrollbar-track       { background: #020617; }
-::-webkit-scrollbar-thumb       { background: #334155; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #475569; }
+::-webkit-scrollbar-track       { background: #0B1120; }
+::-webkit-scrollbar-thumb       { background: #374151; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #4B5563; }
 
-/* ── 3. Utility classes ────────────────────────────────────────
-   .font-mono   — monospace stack used in the editor and code output
-   .line-active — highlights the currently executing line in ExecutionPanel
-   .line-done   — faint tint on lines that have already been executed
-────────────────────────────────────────────────────────────── */
-.font-mono { font-family: 'Fira Code', Consolas, 'Courier New', monospace; }
+/* ── 3. Code utilities ───────────────────────────────────────── */
+.font-mono { font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace; }
 
+/* Highlight the currently executing line in ExecutionPanel */
 .line-active {
-  background: rgba(56, 189, 248, 0.1);  /* sky-400 at 10% — subtle highlight */
-  border-left: 2px solid #38bdf8;       /* sky-400 left accent bar */
+  background-color: rgba(59, 130, 246, 0.1);   /* blue-500 at 10% */
+  border-left: 2px solid #3B82F6;
   padding-left: 6px;
 }
+/* Faint tint on already-executed lines */
 .line-done {
-  background: rgba(74, 222, 128, 0.04); /* green tint for completed lines */
+  background-color: rgba(34, 197, 94, 0.04);   /* green at 4% */
 }
 
-/* ── 4. Tab bar ────────────────────────────────────────────────
-   Used by CodeEditor.jsx to render the "main.py" file tab.
-   .tab-item        — inactive tab
-   .tab-item.active — active tab with top blue border (VS Code style)
-────────────────────────────────────────────────────────────── */
+/* Range input uses the primary blue accent */
+input[type="range"] { accent-color: #3B82F6; }
+
+/* ── 4. Tab bar ──────────────────────────────────────────────── */
 .tab-item {
-  @apply px-4 py-2 text-xs font-mono text-gray-400 border-r border-slate-700
-         hover:text-white hover:bg-slate-800 cursor-pointer transition-colors duration-150;
+  @apply px-4 py-2 text-xs font-mono text-gray-400 border-r border-[#1F2937]
+         hover:text-white hover:bg-[#1a2233] cursor-pointer transition-colors duration-150;
 }
 .tab-item.active {
-  @apply text-white bg-slate-900 border-t-2 border-t-vs-blue;
+  @apply text-white bg-[#0B1120] border-t-2 border-t-blue-500;
 }
 
-/* Teal range-input thumb colour to match the sky palette */
-input[type="range"] { accent-color: #38bdf8; }
-
-/* ── 5. Panel header ───────────────────────────────────────────
-   Shared top-bar style used by all three main panels and the
-   Console Output section.  Always rendered as a flex row with
-   the section title on the left and status/metadata on the right.
-────────────────────────────────────────────────────────────── */
+/* ── 5. Panel header ─────────────────────────────────────────── */
+/* Shared top-bar used in all three main panels and the console */
 .panel-header {
   @apply flex items-center justify-between px-3 py-2
-         bg-slate-900/80 border-b border-slate-700/80 text-[11px]
-         font-mono text-slate-400 select-none;
+         bg-[#111827] border-b border-[#1F2937]
+         text-[11px] font-mono text-gray-400 select-none;
 }
 
-/* ── 6. Glassmorphism panels ───────────────────────────────────
-   Two tiers of frosted-glass containers:
-
-   .glass-panel  — primary container (Editor, Execution, Memory panels).
-                   Larger border-radius, stronger backdrop blur, deeper shadow.
-   .glass-soft   — secondary container (toolbar strip, console, controls bar).
-                   Slightly smaller radius and lighter shadow.
-
-   Both apply a subtle lift + border brightening on hover so panels
-   feel interactive without distracting animations.
-────────────────────────────────────────────────────────────── */
-.glass-panel {
-  @apply bg-slate-900/70 border border-slate-700/80 rounded-2xl
-         backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.6)];
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-}
-.glass-panel:hover {
-  border-color: rgba(148, 163, 184, 0.4);          /* slate-400/40 */
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.7);
-  transform: translateY(-1px);                     /* 1 px lift */
-}
-
+/* ── 6. Panel / card styles ──────────────────────────────────── */
+/*
+  .dev-panel  — primary solid card used for main IDE panels
+  .glass-panel / .glass-soft — kept as aliases for backward compat
+  All three are intentionally identical: solid bg, clean border, no blur.
+*/
+.dev-panel,
+.glass-panel,
 .glass-soft {
-  @apply bg-slate-900/70 border border-slate-700/70 rounded-xl
-         backdrop-blur-xl shadow-[0_4px_20px_rgba(0,0,0,0.5)];
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  background-color: #111827;
+  border: 1px solid #1F2937;
+  border-radius: 12px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
 }
+.dev-panel:hover,
+.glass-panel:hover,
 .glass-soft:hover {
-  border-color: rgba(148, 163, 184, 0.35);
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.65);
+  border-color: #374151;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
   transform: translateY(-1px);
 }
 
-/* ── 7. Control buttons ────────────────────────────────────────
-   .neon-btn          — base class: layout + font + transition
-   .neon-btn-primary  — sky blue (Run / Pause)
-   .neon-btn-danger   — rose red  (Restart)
-   .neon-btn-muted    — slate grey (Step Back / Step)
-   .neon-btn:disabled — dim + block pointer events
+/* ── 7. Buttons ──────────────────────────────────────────────── */
+/*
+  Clean button classes that replace the old "neon-btn" set.
+  Neon aliases are kept so components don't need refactoring.
+*/
 
-   NOTE: The compact toolbar uses TBtn (inline component in
-   VisualizerPage) which duplicates these styles inline.
-   These classes are kept for Courses, Notes, Tutorials, etc.
-────────────────────────────────────────────────────────────── */
+/* Base layout shared by all buttons */
+.btn,
 .neon-btn {
-  @apply relative inline-flex items-center justify-center gap-1.5
-         px-4 py-2 rounded-lg text-sm font-mono font-semibold
-         transition-all duration-150 outline-none cursor-pointer;
+  @apply inline-flex items-center justify-center gap-1.5
+         px-4 py-2 rounded-lg text-sm font-medium
+         transition-colors duration-150 outline-none cursor-pointer
+         disabled:opacity-40 disabled:cursor-not-allowed;
 }
+
+/* Primary — blue fill (Run / resume) */
+.btn-primary,
 .neon-btn-primary {
-  @apply bg-sky-600/30 text-sky-100 border border-sky-500/60;
+  @apply bg-blue-600 text-white border border-blue-500
+         hover:bg-blue-500 active:bg-blue-700;
 }
-.neon-btn-primary:hover:not(:disabled) {
-  @apply bg-sky-600/50 border-sky-400/80;
-}
+
+/* Danger — subtle red (Restart) */
+.btn-danger,
 .neon-btn-danger {
-  @apply bg-red-700/20 text-red-300 border border-red-600/50;
+  @apply bg-transparent text-red-400 border border-red-800
+         hover:bg-red-900/30 hover:border-red-700 active:bg-red-900/50;
 }
-.neon-btn-danger:hover:not(:disabled) {
-  @apply bg-red-700/35 border-red-500/70;
-}
+
+/* Muted — secondary grey (Step Back / Step) */
+.btn-muted,
 .neon-btn-muted {
-  @apply bg-slate-800/80 text-slate-200 border border-slate-600/60;
-}
-.neon-btn-muted:hover:not(:disabled) {
-  @apply bg-slate-700/80 border-slate-500/70;
-}
-.neon-btn:disabled {
-  @apply opacity-40 cursor-not-allowed;
+  @apply bg-transparent text-gray-300 border border-[#374151]
+         hover:bg-[#1F2937] hover:text-white active:bg-[#374151];
 }
 
-/* ── 8. Resize handles (react-resizable-panels v4) ────────────
-   react-resizable-panels renders a <Separator> element between
-   panels.  We style it with a pseudo-element pill that grows on
-   hover/active so the drag affordance is clearly visible without
-   cluttering the UI at rest.
+/* ── 8. Resize handles (react-resizable-panels v4) ──────────── */
 
-   .resize-handle-x  — vertical pill between left-right panels
-   .resize-handle-y  — horizontal pill between top-bottom panels
-
-   ::before  — extends the invisible hit area so dragging is easy
-   ::after   — the visible pill indicator
-────────────────────────────────────────────────────────────── */
-
-/* Left-right (horizontal) drag handle */
+/* Left-right drag handle (between horizontal panels) */
 .resize-handle-x {
-  width: 10px;
+  width: 8px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -194,29 +151,26 @@ input[type="range"] { accent-color: #38bdf8; }
   user-select: none;
 }
 .resize-handle-x::before {
-  /* Expand the clickable area 4 px on each side without affecting layout */
   content: '';
   position: absolute;
-  inset: 0 -4px;
+  inset: 0 -4px;   /* wider invisible hit area */
 }
 .resize-handle-x::after {
   content: '';
   display: block;
   width: 2px;
-  height: 36px;
+  height: 32px;
   border-radius: 9999px;
-  background: rgba(100, 116, 139, 0.3);   /* dim at rest */
-  transition: background 0.15s ease, height 0.15s ease, width 0.15s ease;
+  background: #374151;
+  transition: background 0.15s ease, height 0.15s ease;
 }
-/* Brighten and grow the pill when hovered or actively dragging */
 .resize-handle-x:hover::after,
 .resize-handle-x[data-resize-handle-active]::after {
-  background: rgba(148, 163, 184, 0.6);
-  height: 60px;
-  width: 3px;
+  background: #6B7280;
+  height: 56px;
 }
 
-/* Top-bottom (vertical) drag handle */
+/* Top-bottom drag handle (between vertical panels) */
 .resize-handle-y {
   height: 8px;
   width: 100%;
@@ -232,64 +186,39 @@ input[type="range"] { accent-color: #38bdf8; }
 .resize-handle-y::before {
   content: '';
   position: absolute;
-  inset: -4px 0;  /* 4 px top/bottom extra hit area */
+  inset: -4px 0;
 }
 .resize-handle-y::after {
   content: '';
   display: block;
   height: 2px;
-  width: 48px;
+  width: 40px;
   border-radius: 9999px;
-  background: rgba(100, 116, 139, 0.3);
-  transition: background 0.15s ease, width 0.15s ease, height 0.15s ease;
+  background: #374151;
+  transition: background 0.15s ease, width 0.15s ease;
 }
 .resize-handle-y:hover::after,
 .resize-handle-y[data-resize-handle-active]::after {
-  background: rgba(148, 163, 184, 0.6);
-  width: 80px;
-  height: 3px;
+  background: #6B7280;
+  width: 72px;
 }
 
-/* ── 9. Navigation links ───────────────────────────────────────
-   .nav-link        — base pill-shaped nav item with animated underline
-   .nav-link-active — highlighted state for the current route
-
-   The ::after pseudo-element is a sky-blue underline that scales
-   in horizontally when the link is active (scaleX 0 → 1 transition).
-────────────────────────────────────────────────────────────── */
+/* ── 9. Navigation links ─────────────────────────────────────── */
 .nav-link {
   position: relative;
-  padding: 0.4rem 0.9rem;
-  border-radius: 9999px;
-  font-size: 0.85rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
   font-weight: 500;
-  color: rgba(203, 213, 225, 0.75);   /* slate-300 at 75% */
+  color: #9CA3AF;
   transition: color 0.15s ease, background-color 0.15s ease;
 }
-.nav-link::after {
-  content: '';
-  position: absolute;
-  left: 20%;
-  right: 20%;
-  bottom: 3px;
-  height: 1.5px;
-  border-radius: 9999px;
-  background: #38bdf8;           /* sky-400 underline */
-  transform: scaleX(0);
-  transform-origin: center;
-  transition: transform 0.2s ease, opacity 0.2s ease;
-  opacity: 0;
-}
 .nav-link:hover {
-  color: #f1f5f9;                           /* near-white on hover */
-  background-color: rgba(30, 41, 59, 0.7);  /* slate-800/70 pill fill */
+  color: #E5E7EB;
+  background-color: #1F2937;
 }
 .nav-link-active {
-  color: #f1f5f9;
-  background-color: rgba(30, 41, 59, 0.9);
-  border: 1px solid rgba(148, 163, 184, 0.2);  /* faint border for active pill */
-}
-.nav-link-active::after {
-  transform: scaleX(1);  /* slide in the underline */
-  opacity: 1;
+  color: #E5E7EB;
+  background-color: #1F2937;
+  border: 1px solid #374151;
 }
