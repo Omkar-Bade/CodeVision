@@ -203,7 +203,38 @@ input[type="range"] { accent-color: #3B82F6; }
   width: 72px;
 }
 
-/* ── 9. Navigation links ─────────────────────────────────────── */
+/* ── 9. Monaco linter decorations ─────────────────────────────── */
+
+/* Error line — soft red tint */
+.cv-error-line {
+  background-color: rgba(239, 68, 68, 0.07) !important;
+  border-left: 2px solid rgba(239, 68, 68, 0.5) !important;
+}
+/* Warning line — soft amber tint */
+.cv-warning-line {
+  background-color: rgba(245, 158, 11, 0.06) !important;
+  border-left: 2px solid rgba(245, 158, 11, 0.4) !important;
+}
+/* Red dot in the glyph margin */
+.cv-error-glyph {
+  background-color: #ef4444;
+  width: 8px  !important;
+  height: 8px !important;
+  border-radius: 50%;
+  margin-left: 4px;
+  margin-top: 6px;
+}
+/* Amber dot for warnings */
+.cv-warning-glyph {
+  background-color: #f59e0b;
+  width: 8px  !important;
+  height: 8px !important;
+  border-radius: 50%;
+  margin-left: 4px;
+  margin-top: 6px;
+}
+
+/* ── 10. Navigation links ────────────────────────────────────── */
 .nav-link {
   position: relative;
   padding: 0.35rem 0.85rem;
