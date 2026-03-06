@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import axios from 'axios'
-import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels'
+import { Group as PanelGroup, Panel, Separator as PanelResizeHandle } from 'react-resizable-panels'
 
 import Navbar         from '../components/Navbar'
 import CodeEditor, { DEFAULT_CODE } from '../components/CodeEditor'
@@ -257,7 +257,7 @@ export default function VisualizerPage() {
 
         {/* ── Main 3-column resizable workspace ── */}
         <div className="flex-1 min-h-0 px-4 pb-3">
-          <PanelGroup direction="horizontal" className="h-full gap-0">
+          <PanelGroup orientation="horizontal" className="h-full gap-0">
 
             {/* LEFT: Code Editor */}
             <Panel defaultSize={33} minSize={18} className="flex flex-col min-h-0">
