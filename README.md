@@ -181,16 +181,3 @@ Backend returns:
 ```
 
 ---
-
-## Hackathon Presentation Tips
-
-1. Open the visualizer and type the default variable assignment code
-2. Click **Run** and let it play automatically
-3. Use **speed slider** to slow it down while explaining memory changes
-4. Use **← →** to step manually for audience questions
-5. Load the **Loop Sum** example to show how variables accumulate
-6. Show the **Tutorials** page to demonstrate the educational content
-
----
-
-Built with ❤️ for Hackathon 2025
