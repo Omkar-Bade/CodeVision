@@ -1,7 +1,12 @@
 # CodeVision – Programming Concept Visualizer
 
-> A hackathon project that helps beginner programmers **see** how their code runs —
-> variable by variable, line by line.
+> An educational platform that helps beginner programmers **see** how Python code runs —
+> variable by variable, line by line, including functions and recursion.
+
+[![Python](https://img.shields.io/badge/Python-3.8+-3776AB?logo=python&logoColor=white)](https://python.org)
+[![React](https://img.shields.io/badge/React-18+-61DAFB?logo=react&logoColor=black)](https://reactjs.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![Supabase](https://img.shields.io/badge/Supabase-Auth%20%26%20DB-3ECF8E?logo=supabase&logoColor=white)](https://supabase.com)
 
 ---
 
@@ -9,20 +14,23 @@
 
 CodeVision converts Python code into visual execution states and displays:
 
-- Variable creation and value updates
-- Memory state at every step
-- Line-by-line execution flow
-- Animated memory visualization
+- **Variable creation and updates** — see values change in real time
+- **Memory visualization** — type, size, and scope for each variable
+- **Function execution** — call stack, local variables, return values
+- **Recursion** — nested stack frames and unwinding
+- **Line-by-line execution** — step through code with play/pause/step controls
+- **Beginner-friendly error explanations** — hints and example fixes for common mistakes
 
 ---
 
 ## Tech Stack
 
-| Layer     | Technology                                        |
-|-----------|---------------------------------------------------|
-| Frontend  | React (Vite) · Tailwind CSS · Framer Motion · Monaco Editor |
-| Backend   | Python · FastAPI · `sys.settrace` for execution tracing |
-| API       | REST (JSON) over HTTP                             |
+| Layer | Technology |
+|-------|-------------|
+| **Frontend** | React (Vite) · Tailwind CSS · Framer Motion · Monaco Editor · React Router |
+| **Backend** | Python · FastAPI · `sys.settrace` for execution tracing |
+| **Auth & DB** | Supabase (Auth, PostgreSQL) |
+| **API** | REST (JSON) over HTTP |
 
 ---
 
@@ -30,166 +38,208 @@ CodeVision converts Python code into visual execution states and displays:
 
 ```
 CodeVision/
-├── backend/
-│   ├── main.py           # FastAPI app, /execute endpoint
-│   ├── executor.py       # Code execution tracer (sys.settrace)
+├── backend/                    # Python execution service
+│   ├── main.py                 # FastAPI app, /execute endpoint
+│   ├── executor.py             # Step-by-step tracer (sys.settrace)
 │   └── requirements.txt
 │
-└── frontend/
-    ├── index.html
-    ├── package.json
-    ├── vite.config.js
-    ├── tailwind.config.js
-    └── src/
-        ├── App.jsx
-        ├── main.jsx
-        ├── index.css
-        ├── components/
-        │   ├── Navbar.jsx          # Top navigation
-        │   ├── LandingPage.jsx     # Hero + binary rain + typing animation
-        │   ├── CodeEditor.jsx      # Monaco editor wrapper
-        │   ├── ExecutionPanel.jsx  # Line-by-line viewer
-        │   ├── MemoryView.jsx      # Animated variable boxes
-        │   ├── Controls.jsx        # Playback controls + speed slider
-        │   ├── Courses.jsx         # Learning courses page
-        │   ├── Notes.jsx           # Concept notes reference
-        │   └── Tutorials.jsx       # Interactive tutorials
-        └── pages/
-            └── VisualizerPage.jsx  # Main 3-panel workspace
+├── frontend/
+│   ├── src/
+│   │   ├── App.jsx             # Routes, AuthProvider, ProtectedRoute
+│   │   ├── main.jsx
+│   │   ├── index.css
+│   │   ├── api/index.js        # API client (execute, Supabase)
+│   │   ├── components/
+│   │   │   ├── Navbar.jsx
+│   │   │   ├── LandingPage.jsx
+│   │   │   ├── CodeEditor.jsx      # Monaco + linter + error explanations
+│   │   │   ├── ExecutionPanel.jsx  # Line highlight, annotations, scope
+│   │   │   ├── MemoryView.jsx      # Call stack, scoped variables
+│   │   │   ├── ErrorExplanation.jsx
+│   │   │   ├── Controls.jsx
+│   │   │   ├── Courses.jsx
+│   │   │   ├── Notes.jsx
+│   │   │   ├── Tutorials.jsx
+│   │   │   └── ProtectedRoute.jsx
+│   │   ├── context/AuthContext.jsx
+│   │   ├── lib/
+│   │   │   ├── supabase.js
+│   │   │   ├── pythonLinter.js
+│   │   │   └── errorExplainer.js
+│   │   └── pages/
+│   │       ├── VisualizerPage.jsx
+│   │       ├── LoginPage.jsx
+│   │       └── RegisterPage.jsx
+│   ├── .env.example
+│   ├── package.json
+│   ├── vite.config.js
+│   └── tailwind.config.js
+│
+├── backend-node/               # Optional Node.js API (MongoDB) — not required for current setup
+│
+├── .github/                    # Issue/PR templates
+├── CONTRIBUTING.md
+├── LICENSE
+└── README.md
 ```
 
 ---
 
-## Setup & Running
+## Quick Start
 
-### 1. Backend
+### Prerequisites
+
+- Node.js 18+
+- Python 3.8+
+- A [Supabase](https://supabase.com) project (for auth and optional persistence)
+
+### 1. Clone and install
+
+```bash
+git clone https://github.com/Omkar-Bade/CodeVision.git
+cd CodeVision
+```
+
+### 2. Backend (Python)
 
 ```bash
 cd backend
-
-# Install dependencies
-pip install fastapi uvicorn
-
-# Start the server
-uvicorn main:app --reload
+pip install -r requirements.txt
+python -m uvicorn main:app --reload
 ```
 
-The backend runs at **http://localhost:8000**
+Backend runs at **http://localhost:8000**
 
-API endpoints:
-- `GET /`         — health check
-- `POST /execute` — execute Python code, returns execution steps
-
----
-
-### 2. Frontend
+### 3. Frontend (React)
 
 ```bash
 cd frontend
-
-# Install dependencies
+cp .env.example .env
+# Edit .env with your Supabase URL and anon key
 npm install
-
-# Start development server
 npm run dev
 ```
 
-The frontend runs at **http://localhost:3000**
+Frontend runs at **http://localhost:5173** (or 3000)
 
----
+### 4. Environment variables
 
-### 3. Both at the same time
+Create `frontend/.env`:
 
-Open two terminals:
-
-**Terminal 1:**
-```bash
-cd backend
-uvicorn main:app --reload
+```env
+VITE_SUPABASE_URL=https://<your-project>.supabase.co
+VITE_SUPABASE_ANON_KEY=<your-anon-key>
 ```
 
-**Terminal 2:**
-```bash
-cd frontend
-npm run dev
-```
-
-Then open **http://localhost:3000** in your browser.
+Get these from [Supabase Dashboard](https://supabase.com/dashboard) → Project Settings → API.
 
 ---
 
 ## Features
 
-### Visualizer Page (`/visualizer`)
-- **Monaco Editor** — syntax-highlighted Python editor
-- **Execution Panel** — shows current executing line with visual highlight
-- **Memory View** — animated variable boxes with NEW/UPDATED badges
-- **Console Output** — shows program output and errors
-- **Playback Controls** — Run · Pause · Next · Previous · Reset
-- **Speed Slider** — control execution animation speed
-- **Keyboard Shortcuts** — Space (play/pause) · ← → (step)
-- **Quick Examples** — load and run 6 built-in example programs
+### Visualizer (`/visualizer`)
 
-### Learning Pages
-- **Courses** (`/courses`) — 6 structured Python courses with lesson breakdowns
-- **Notes** (`/notes`) — 8 expandable concept cards with code examples
-- **Tutorials** (`/tutorials`) — 8 interactive tutorials with "Run in Visualizer" buttons
+| Feature | Description |
+|---------|-------------|
+| **Monaco Editor** | Syntax highlighting, Python linter, error explanations |
+| **Execution Panel** | Active line highlight, event labels (Call/Return), annotations |
+| **Memory View** | Call stack, global vs local scope, variable cards with type/size |
+| **Console Output** | Program output and errors |
+| **Playback** | Run · Pause · Step · Previous · Reset · Speed slider |
+| **Input simulation** | Pre-fill values for `input()` calls |
+| **Resizable panels** | Drag borders to resize editor, execution, and memory panels |
 
-### Landing Page (`/`)
-- Animated binary rain background (canvas)
-- Terminal typing animation
-- Feature cards with hover effects
-- Mock IDE preview
+### Supported Python concepts
+
+- Variables, arithmetic, loops, conditionals
+- **Functions** — call stack, local variables, return values
+- **Recursion** — nested stack frames
+- **Built-ins** — `len()`, `type()`, `int()`, `str()`, `range()`, etc.
+- **`input()`** — simulated via toolbar input field
+
+### Learning pages
+
+- **Courses** (`/courses`) — structured Python lessons
+- **Notes** (`/notes`) — concept cards with examples
+- **Tutorials** (`/tutorials`) — interactive tutorials with "Run in Visualizer"
+
+### Authentication (Supabase)
+
+- Sign up, log in, log out
+- Protected routes: Visualizer, Courses, Notes, Tutorials
+- Execution history and saved code (if Supabase tables are configured)
+
+---
+
+## API Reference
+
+### `POST /execute`
+
+Execute Python code and return step-by-step trace.
+
+**Request:**
+
+```json
+{
+  "code": "def greet():\n    print('Hello')\ngreet()",
+  "inputs": ["optional", "values", "for", "input()"]
+}
+```
+
+**Response:**
+
+```json
+{
+  "steps": [
+    {
+      "step": 1,
+      "line": 1,
+      "code": "def greet():",
+      "memory": {},
+      "event": "line",
+      "scope": "global",
+      "call_stack": [],
+      "annotations": []
+    },
+    {
+      "step": 2,
+      "line": 1,
+      "code": "def greet():",
+      "memory": {},
+      "event": "call",
+      "scope": "greet",
+      "call_stack": [{"name": "greet", "locals": {}}],
+      "annotations": [{"type": "call", "detail": "Calling greet() — new stack frame created"}]
+    }
+  ],
+  "output": "Hello\n",
+  "error": null,
+  "total_steps": 6
+}
+```
 
 ---
 
 ## How the Execution Engine Works
 
 1. User submits Python code to `POST /execute`
-2. Backend compiles code with `compile(code, '<codevision>', 'exec')`
-3. `sys.settrace` hooks into Python's interpreter to capture each line event
-4. At each `line` event: records `{ line_number, code_text, memory_snapshot }`
-5. Memory snapshot filters out builtins — shows only user variables
-6. Returns a JSON array of steps to the frontend
-7. Frontend animates through steps with Framer Motion
+2. Backend compiles with `compile(code, '<codevision>', 'exec')`
+3. `sys.settrace` hooks into the interpreter to capture `call`, `line`, `return`, `exception` events
+4. Per-frame pending tracking ensures correct step ordering across function boundaries
+5. Each step includes: `line`, `code`, `memory`, `scope`, `call_stack`, `annotations`
+6. Frontend animates through steps with Framer Motion
 
 ---
 
-## Example Execution
+## Contributing
 
-Input code:
-```python
-a = 5
-b = a
-a = 10
-print(a, b)
-```
-
-Backend returns:
-```json
-{
-  "steps": [
-    { "step": 1, "line": 1, "code": "a = 5",     "memory": { "a": 5 } },
-    { "step": 2, "line": 2, "code": "b = a",      "memory": { "a": 5, "b": 5 } },
-    { "step": 3, "line": 3, "code": "a = 10",     "memory": { "a": 10, "b": 5 } },
-    { "step": 4, "line": 4, "code": "print(a,b)", "memory": { "a": 10, "b": 5 } }
-  ],
-  "output": "10 5\n",
-  "error": null,
-  "total_steps": 4
-}
-```
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ---
 
-## Hackathon Presentation Tips
+## License
 
-1. Open the visualizer and type the default variable assignment code
-2. Click **Run** and let it play automatically
-3. Use **speed slider** to slow it down while explaining memory changes
-4. Use **← →** to step manually for audience questions
-5. Load the **Loop Sum** example to show how variables accumulate
-6. Show the **Tutorials** page to demonstrate the educational content
+MIT License — see [LICENSE](LICENSE).
 
 ---
 
