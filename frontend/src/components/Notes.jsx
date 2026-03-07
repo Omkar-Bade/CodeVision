@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Navbar from './Navbar'
+import Footer from './Footer'
 
 const NOTES = [
   {
@@ -264,6 +265,8 @@ export default function Notes() {
           </div>
         )}
       </div>
+
+      <Footer />
     </div>
   )
 }

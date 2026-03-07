@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import Navbar from './Navbar'
+import Footer from './Footer'
 
 /* ─── Subtle dot-grid background ────────────────────────────────
    A very faint radial-gradient dot pattern — feels like a
@@ -361,9 +362,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── Footer ───────────────────────────────────────────── */}
-      <footer className="relative z-10 border-t border-[#1F2937] py-6 text-center text-gray-500 text-xs font-mono">
-        CodeVision &nbsp;·&nbsp; Programming Concept Visualizer
-      </footer>
+      <Footer />
     </div>
   )
 }
