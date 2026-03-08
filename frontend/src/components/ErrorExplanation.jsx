@@ -1,10 +1,38 @@
+/**
+ * ErrorExplanation.jsx
+ *
+ * Animated panel displayed below the Monaco editor whenever the Python
+ * linter detects issues in the user's code.
+ *
+ * Design goals:
+ *   - Beginner-friendly: each error card shows a plain-English explanation,
+ *     a fix hint, and a short executable example so learners understand
+ *     the mistake without reading dry documentation.
+ *   - Non-overwhelming: at most 3 cards are rendered at once; a "+N more
+ *     issues" label is shown when there are additional problems.
+ *   - Smooth: the panel slides in/out with a height animation so it doesn't
+ *     cause a jarring layout shift.
+ *
+ * Sub-components:
+ *   ExplanationCard — renders a single error's icon, type badge, line
+ *                     number, description, 💡 hint, and code example.
+ *
+ * Props:
+ *   explanations — array of explanation objects produced by `explainErrors()`
+ *                  in lib/errorExplainer.js.  Each object has:
+ *                  { type, title, explanation, hint, example, line }
+ *
+ * Text formatting:
+ *   `renderBold` converts **bold** markdown syntax to <strong> elements
+ *   so explanation text can highlight key terms without extra libraries.
+ */
 import { motion, AnimatePresence } from 'framer-motion'
 
 const TYPE_STYLES = {
-  SyntaxError:      { icon: '🔴', color: 'text-red-400',    border: 'border-red-800/40',    bg: 'bg-red-950/30' },
+  SyntaxError: { icon: '🔴', color: 'text-red-400', border: 'border-red-800/40', bg: 'bg-red-950/30' },
   IndentationError: { icon: '🟡', color: 'text-yellow-400', border: 'border-yellow-800/40', bg: 'bg-yellow-950/30' },
-  NameError:        { icon: '🔴', color: 'text-red-400',    border: 'border-red-800/40',    bg: 'bg-red-950/30' },
-  Typo:             { icon: '🟠', color: 'text-amber-400',  border: 'border-amber-800/40',  bg: 'bg-amber-950/30' },
+  NameError: { icon: '🔴', color: 'text-red-400', border: 'border-red-800/40', bg: 'bg-red-950/30' },
+  Typo: { icon: '🟠', color: 'text-amber-400', border: 'border-amber-800/40', bg: 'bg-amber-950/30' },
 }
 const DEFAULT_STYLE = { icon: '⚠', color: 'text-gray-400', border: 'border-[#374151]', bg: 'bg-[#0d1117]' }
 
