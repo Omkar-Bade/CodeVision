@@ -86,12 +86,12 @@ function StepCard({ number, title, description, icon, delay }) {
 /* ─── Feature Card (Section 3) ───────────────────────────────── */
 function FeatureCard({ icon, title, description, color, delay }) {
   const colorMap = {
-    blue:   { ring: 'border-blue-600/30',   badge: 'bg-blue-600/10 text-blue-400'   },
-    green:  { ring: 'border-green-600/30',  badge: 'bg-green-600/10 text-green-400' },
+    blue: { ring: 'border-blue-600/30', badge: 'bg-blue-600/10 text-blue-400' },
+    green: { ring: 'border-green-600/30', badge: 'bg-green-600/10 text-green-400' },
     purple: { ring: 'border-purple-600/30', badge: 'bg-purple-600/10 text-purple-400' },
-    amber:  { ring: 'border-amber-600/30',  badge: 'bg-amber-600/10 text-amber-400' },
-    red:    { ring: 'border-red-600/30',    badge: 'bg-red-600/10 text-red-400'     },
-    cyan:   { ring: 'border-cyan-600/30',   badge: 'bg-cyan-600/10 text-cyan-400'   },
+    amber: { ring: 'border-amber-600/30', badge: 'bg-amber-600/10 text-amber-400' },
+    red: { ring: 'border-red-600/30', badge: 'bg-red-600/10 text-red-400' },
+    cyan: { ring: 'border-cyan-600/30', badge: 'bg-cyan-600/10 text-cyan-400' },
     violet: { ring: 'border-violet-600/30', badge: 'bg-violet-600/10 text-violet-400' },
   }
   const c = colorMap[color] ?? colorMap.blue
@@ -221,8 +221,8 @@ function MiniIDE() {
           <div className="text-[10px] font-mono text-gray-500 tracking-widest uppercase mb-3">Editor</div>
           <div className="font-mono text-sm space-y-1">
             {[
-              { n: 1, active: false, done: true,  content: <><span className="text-yellow-300">a</span><span className="text-gray-300"> = </span><span className="text-blue-300">5</span></> },
-              { n: 2, active: true,  done: false, content: <><span className="text-yellow-300">b</span><span className="text-gray-300"> = </span><span className="text-yellow-300">a</span></> },
+              { n: 1, active: false, done: true, content: <><span className="text-yellow-300">a</span><span className="text-gray-300"> = </span><span className="text-blue-300">5</span></> },
+              { n: 2, active: true, done: false, content: <><span className="text-yellow-300">b</span><span className="text-gray-300"> = </span><span className="text-yellow-300">a</span></> },
               { n: 3, active: false, done: false, content: <><span className="text-yellow-300">a</span><span className="text-gray-300"> = </span><span className="text-blue-300">10</span></> },
               { n: 4, active: false, done: false, content: <><span className="text-blue-300">print</span><span className="text-gray-300">(a, b)</span></> },
             ].map(({ n, active, done, content }) => (
@@ -350,65 +350,15 @@ export default function GuidePage() {
       {/* ── Hero ────────────────────────────────────────────────── */}
       <section className="relative z-10 pt-28 pb-16 px-4 text-center">
         <div className="max-w-3xl mx-auto">
-          <motion.div
-            className="inline-flex items-center gap-2 px-3 py-1 rounded-full
-                       bg-blue-600/10 border border-blue-600/30 text-blue-400
-                       text-xs font-mono mb-6"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.1 }}
-          >
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
-            User Guide · Getting Started
-          </motion.div>
-
           <motion.h1
-            className="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight mb-5"
+            className="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight"
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, delay: 0.15 }}
+            transition={{ duration: 0.55, delay: 0.1 }}
           >
             <span className="text-white">CodeVision </span>
             <span className="text-blue-400">User Guide</span>
           </motion.h1>
-
-          <motion.p
-            className="text-gray-400 text-lg leading-relaxed max-w-2xl mx-auto mb-8"
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-          >
-            This guide explains how to use CodeVision and how it helps beginners
-            understand programming by visualizing code execution{' '}
-            <span className="text-blue-400">step by step</span>.
-          </motion.p>
-
-          {/* Quick-jump pills */}
-          <motion.div
-            className="flex flex-wrap justify-center gap-2"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.45 }}
-          >
-            {[
-              ['#what-is', '§1 What is CodeVision?'],
-              ['#how-to-use', '§2 How to Use'],
-              ['#features', '§3 Features'],
-              ['#benefits', '§4 Why Use It'],
-              ['#tips', '§5 Tips'],
-              ['#who', '§6 Who Is It For'],
-            ].map(([href, label]) => (
-              <a
-                key={href}
-                href={href}
-                className="px-3 py-1.5 text-xs font-mono border border-[#374151]
-                           text-gray-400 hover:text-blue-400 hover:border-blue-700/50
-                           rounded-lg transition-colors duration-150"
-              >
-                {label}
-              </a>
-            ))}
-          </motion.div>
         </div>
       </section>
 
@@ -416,7 +366,7 @@ export default function GuidePage() {
       <section id="what-is" className="relative z-10 py-16 px-4 border-t border-[#1F2937]">
         <div className="max-w-5xl mx-auto">
           <SectionHeading
-            badge="Section 1"
+            badge="What is CodeVision?"
             title="What is"
             accent="CodeVision?"
             subtitle="A quick introduction to the platform and what makes it different from a regular code editor."
@@ -457,10 +407,10 @@ export default function GuidePage() {
                   {[
                     { icon: '⚡', label: 'Execution steps', color: 'text-blue-400' },
                     { icon: '📦', label: 'Variable creation', color: 'text-yellow-400' },
-                    { icon: '💾', label: 'Memory changes',   color: 'text-green-400' },
-                    { icon: '📞', label: 'Function calls',   color: 'text-purple-400' },
-                    { icon: '🖥️', label: 'Console output',   color: 'text-cyan-400'  },
-                    { icon: '🚨', label: 'Syntax errors',    color: 'text-red-400'   },
+                    { icon: '💾', label: 'Memory changes', color: 'text-green-400' },
+                    { icon: '📞', label: 'Function calls', color: 'text-purple-400' },
+                    { icon: '🖥️', label: 'Console output', color: 'text-cyan-400' },
+                    { icon: '🚨', label: 'Syntax errors', color: 'text-red-400' },
                   ].map(({ icon, label, color }) => (
                     <div key={label} className="flex items-center gap-2">
                       <span className="text-sm">{icon}</span>
@@ -491,7 +441,7 @@ export default function GuidePage() {
       <section id="how-to-use" className="relative z-10 py-16 px-4 border-t border-[#1F2937] bg-[#111827]/40">
         <div className="max-w-5xl mx-auto">
           <SectionHeading
-            badge="Section 2"
+            badge="How to Use"
             title="How to Use"
             accent="CodeVision"
             subtitle="Follow these 6 steps to get started with your first visualization."
@@ -528,7 +478,7 @@ export default function GuidePage() {
       <section id="features" className="relative z-10 py-16 px-4 border-t border-[#1F2937]">
         <div className="max-w-6xl mx-auto">
           <SectionHeading
-            badge="Section 3"
+            badge="Features"
             title="Features of"
             accent="CodeVision"
             subtitle="Everything the platform provides to make your learning experience powerful and interactive."
@@ -546,7 +496,7 @@ export default function GuidePage() {
       <section id="benefits" className="relative z-10 py-16 px-4 border-t border-[#1F2937] bg-[#111827]/40">
         <div className="max-w-5xl mx-auto">
           <SectionHeading
-            badge="Section 4"
+            badge="Why Use It"
             title="Why CodeVision Helps"
             accent="Beginners"
             subtitle="Programming is hard when you can't see what the program is actually doing. CodeVision makes the invisible visible."
@@ -593,9 +543,9 @@ export default function GuidePage() {
                 </div>
                 {[
                   { step: '1', label: 'Start with Tutorials', sub: 'Use pre-built examples' },
-                  { step: '2', label: 'Read the Notes',       sub: 'Learn key Python concepts' },
-                  { step: '3', label: 'Write your own code',  sub: 'Experiment in the Visualizer' },
-                  { step: '4', label: 'Take Courses',         sub: 'Build structured knowledge' },
+                  { step: '2', label: 'Read the Notes', sub: 'Learn key Python concepts' },
+                  { step: '3', label: 'Write your own code', sub: 'Experiment in the Visualizer' },
+                  { step: '4', label: 'Take Courses', sub: 'Build structured knowledge' },
                 ].map(({ step, label, sub }) => (
                   <div key={step} className="flex items-start gap-3 mb-3 last:mb-0">
                     <span className="shrink-0 w-5 h-5 rounded-full border border-green-600/50 text-green-400 text-xs flex items-center justify-center font-mono">
@@ -617,7 +567,7 @@ export default function GuidePage() {
       <section id="tips" className="relative z-10 py-16 px-4 border-t border-[#1F2937]">
         <div className="max-w-5xl mx-auto">
           <SectionHeading
-            badge="Section 5"
+            badge="Tips"
             title="Tips for Using"
             accent="CodeVision"
             subtitle="Get the most out of the platform with these practical tips for beginners."
@@ -635,7 +585,7 @@ export default function GuidePage() {
       <section id="who" className="relative z-10 py-16 px-4 border-t border-[#1F2937] bg-[#111827]/40">
         <div className="max-w-5xl mx-auto">
           <SectionHeading
-            badge="Section 6"
+            badge="Who Is It For"
             title="Who Should Use"
             accent="CodeVision?"
             subtitle="CodeVision is built for everyone who wants to truly understand how programs work."
