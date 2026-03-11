@@ -351,7 +351,7 @@ export default function GuidePage() {
       <section className="relative z-10 pt-28 pb-16 px-4 text-center">
         <div className="max-w-3xl mx-auto">
           <motion.h1
-            className="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight"
+            className="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight mb-5"
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.55, delay: 0.1 }}
@@ -359,11 +359,23 @@ export default function GuidePage() {
             <span className="text-white">CodeVision </span>
             <span className="text-blue-400">User Guide</span>
           </motion.h1>
+
+          <motion.p
+            className="text-gray-400 text-lg leading-relaxed max-w-2xl mx-auto"
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.25 }}
+          >
+            Everything you need to know to get started with CodeVision —
+            from writing your first program to understanding{' '}
+            <span className="text-blue-400">step-by-step execution</span>{' '}
+            and memory visualization.
+          </motion.p>
         </div>
       </section>
 
       {/* ── Section 1: What is CodeVision? ──────────────────────── */}
-      <section id="what-is" className="relative z-10 py-16 px-4 border-t border-[#1F2937]">
+      <section id="what-is" className="relative z-10 py-16 px-4">
         <div className="max-w-5xl mx-auto">
           <SectionHeading
             badge="What is CodeVision?"
@@ -438,7 +450,7 @@ export default function GuidePage() {
       </section>
 
       {/* ── Section 2: How to Use ─────────────────────────────── */}
-      <section id="how-to-use" className="relative z-10 py-16 px-4 border-t border-[#1F2937] bg-[#111827]/40">
+      <section id="how-to-use" className="relative z-10 py-16 px-4">
         <div className="max-w-5xl mx-auto">
           <SectionHeading
             badge="How to Use"
@@ -475,7 +487,7 @@ export default function GuidePage() {
       </section>
 
       {/* ── Section 3: Features ───────────────────────────────── */}
-      <section id="features" className="relative z-10 py-16 px-4 border-t border-[#1F2937]">
+      <section id="features" className="relative z-10 py-16 px-4">
         <div className="max-w-6xl mx-auto">
           <SectionHeading
             badge="Features"
@@ -493,7 +505,7 @@ export default function GuidePage() {
       </section>
 
       {/* ── Section 4: Why Use It ─────────────────────────────── */}
-      <section id="benefits" className="relative z-10 py-16 px-4 border-t border-[#1F2937] bg-[#111827]/40">
+      <section id="benefits" className="relative z-10 py-16 px-4">
         <div className="max-w-5xl mx-auto">
           <SectionHeading
             badge="Why Use It"
@@ -564,7 +576,7 @@ export default function GuidePage() {
       </section>
 
       {/* ── Section 5: Tips ───────────────────────────────────── */}
-      <section id="tips" className="relative z-10 py-16 px-4 border-t border-[#1F2937]">
+      <section id="tips" className="relative z-10 py-16 px-4">
         <div className="max-w-5xl mx-auto">
           <SectionHeading
             badge="Tips"
@@ -582,7 +594,7 @@ export default function GuidePage() {
       </section>
 
       {/* ── Section 6: Who Should Use It ─────────────────────── */}
-      <section id="who" className="relative z-10 py-16 px-4 border-t border-[#1F2937] bg-[#111827]/40">
+      <section id="who" className="relative z-10 py-16 px-4">
         <div className="max-w-5xl mx-auto">
           <SectionHeading
             badge="Who Is It For"
@@ -600,7 +612,7 @@ export default function GuidePage() {
       </section>
 
       {/* ── FAQ ───────────────────────────────────────────────── */}
-      <section className="relative z-10 py-16 px-4 border-t border-[#1F2937]">
+      <section className="relative z-10 py-16 px-4">
         <div className="max-w-3xl mx-auto">
           <SectionHeading
             badge="FAQ"
