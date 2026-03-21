@@ -340,7 +340,3 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to contribute.
 ## 📄 License
 
 MIT License — see [LICENSE](LICENSE) for details.
-
----
-
-*Built with ❤️ for students learning to code*
