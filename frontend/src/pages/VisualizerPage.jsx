@@ -32,6 +32,8 @@ import MemoryView from '../components/MemoryView'
 
 // Python FastAPI execution service URL
 const API_URL = 'http://localhost:8000'
+// Java Spring Boot execution service URL
+const JAVA_API_URL = 'http://localhost:8081'
 
 // Speed slider maps 0–100 (slider position) to MAX_DELAY–MIN_DELAY ms (execution interval).
 // Slider left = slowest (2 s per step), slider right = fastest (80 ms per step).
@@ -82,6 +84,8 @@ export default function VisualizerPage() {
   // output        – stdout captured from the user's code (print statements)
   // error         – error message string when execution fails
   // stale         – true when the editor code has changed since the last run
+  // language      – 'python' or 'java' selection for execution
+  const [language, setLanguage] = useState('python')
   const [code, setCode] = useState(() => location.state?.code ?? DEFAULT_CODE)
   const [steps, setSteps] = useState([])
   const [currentStepIndex, setCurrentStepIndex] = useState(-1)
@@ -171,7 +175,10 @@ export default function VisualizerPage() {
       const inputs = inputValues.trim()
         ? inputValues.split(',').map(s => s.trim())
         : undefined
-      const { data } = await axios.post(`${API_URL}/execute`, { code: src, inputs })
+      const isJava = language === 'java';
+      const url = isJava ? `${JAVA_API_URL}/execute-java` : `${API_URL}/execute`;
+      
+      const { data } = await axios.post(url, { code: src, inputs })
       const capturedOutput = data.output ?? ''
       setOutput(capturedOutput)
       if (data.error) { setError(data.error); return null }
@@ -192,8 +199,8 @@ export default function VisualizerPage() {
     } catch (err) {
       setError(
         err.code === 'ERR_NETWORK'
-          ? 'Cannot connect to the backend.\n\nRun:\n  cd backend\n  python -m uvicorn main:app --reload'
-          : (err.response?.data?.detail ?? String(err))
+          ? `Cannot connect to the backend.\n\nMake sure the ${language} server is running.`
+          : (err.response?.data?.error ?? err.response?.data?.detail ?? String(err))
       )
       return null
     } finally {
@@ -231,7 +238,7 @@ export default function VisualizerPage() {
     const { error: dbErr } = await supabase.from('saved_codes').insert({
       user_id: user.id,
       code: code,
-      language: 'python',
+      language: language,
     })
     if (dbErr) {
       console.warn('Save failed:', dbErr.message)
@@ -309,6 +316,23 @@ export default function VisualizerPage() {
               </svg>
               {editorVisible ? 'Hide Editor' : 'Show Editor'}
             </button>
+
+            <div className="w-px h-4 bg-[#374151] shrink-0" />
+
+            {/* Language Selector */}
+            <select
+              value={language}
+              onChange={(e) => {
+                setLanguage(e.target.value);
+                setSteps([]);
+                setCurrentStepIndex(-1);
+                setOutput('');
+              }}
+              className="px-2 py-1 text-xs bg-[#0B1120] border border-[#374151] rounded-md text-gray-300 font-mono focus:outline-none focus:border-blue-500 transition-colors cursor-pointer"
+            >
+              <option value="python">Python 3</option>
+              <option value="java">Java 17+</option>
+            </select>
 
             <div className="w-px h-4 bg-[#374151] shrink-0" />
 
@@ -454,7 +478,7 @@ export default function VisualizerPage() {
                       transition={{ duration: 0.16 }}
                       style={{ transformOrigin: 'left' }}
                     >
-                      <CodeEditor code={code} onChange={handleCodeChange} />
+                      <CodeEditor code={code} onChange={handleCodeChange} language={language} />
                     </motion.div>
                   </Panel>
                   {/* Draggable divider between Editor and Execution Viewer */}
