@@ -3,39 +3,49 @@ package com.codevision.javabackend.model;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Holds all extracted information about a single Java class.
+ *
+ * Fields, methods, and constructors are now structured objects
+ * (FieldInfo, MethodInfo, ConstructorInfo) instead of plain strings,
+ * so the frontend receives access modifiers, types, and parameters separately.
+ */
 public class ClassInfo {
+
     private String name;
-    private List<String> attributes = new ArrayList<>();
-    private List<String> methods = new ArrayList<>();
-    private List<String> constructors = new ArrayList<>();
-    private String inheritance;
-    private List<String> interfaces = new ArrayList<>();
-    private List<String> polymorphism = new ArrayList<>();
-    private List<String> encapsulation = new ArrayList<>();
+    private String inheritance;                         // extends ClassName
+    private List<String>          interfaces    = new ArrayList<>();  // implements X, Y
+    private List<FieldInfo>       fields        = new ArrayList<>();  // instance variables
+    private List<MethodInfo>      methods       = new ArrayList<>();  // member methods
+    private List<ConstructorInfo> constructors  = new ArrayList<>();  // constructors
+    private List<String>          polymorphism  = new ArrayList<>();  // overloaded method names
+    private List<String>          encapsulation = new ArrayList<>();  // access modifiers found
 
     public ClassInfo() {}
 
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
+    // ── Getters & Setters ──────────────────────────────────────────────
 
-    public List<String> getAttributes() { return attributes; }
-    public void setAttributes(List<String> attributes) { this.attributes = attributes; }
+    public String getName()                             { return name; }
+    public void setName(String name)                    { this.name = name; }
 
-    public List<String> getMethods() { return methods; }
-    public void setMethods(List<String> methods) { this.methods = methods; }
+    public String getInheritance()                      { return inheritance; }
+    public void setInheritance(String inheritance)      { this.inheritance = inheritance; }
 
-    public List<String> getConstructors() { return constructors; }
-    public void setConstructors(List<String> constructors) { this.constructors = constructors; }
+    public List<String> getInterfaces()                 { return interfaces; }
+    public void setInterfaces(List<String> interfaces)  { this.interfaces = interfaces; }
 
-    public String getInheritance() { return inheritance; }
-    public void setInheritance(String inheritance) { this.inheritance = inheritance; }
+    public List<FieldInfo> getFields()                  { return fields; }
+    public void setFields(List<FieldInfo> fields)       { this.fields = fields; }
 
-    public List<String> getInterfaces() { return interfaces; }
-    public void setInterfaces(List<String> interfaces) { this.interfaces = interfaces; }
+    public List<MethodInfo> getMethods()                { return methods; }
+    public void setMethods(List<MethodInfo> methods)    { this.methods = methods; }
 
-    public List<String> getPolymorphism() { return polymorphism; }
+    public List<ConstructorInfo> getConstructors()                      { return constructors; }
+    public void setConstructors(List<ConstructorInfo> constructors)     { this.constructors = constructors; }
+
+    public List<String> getPolymorphism()               { return polymorphism; }
     public void setPolymorphism(List<String> polymorphism) { this.polymorphism = polymorphism; }
 
-    public List<String> getEncapsulation() { return encapsulation; }
+    public List<String> getEncapsulation()              { return encapsulation; }
     public void setEncapsulation(List<String> encapsulation) { this.encapsulation = encapsulation; }
 }
