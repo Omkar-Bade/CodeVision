@@ -32,8 +32,6 @@ import MemoryView from '../components/MemoryView'
 
 // Python FastAPI execution service URL
 const API_URL = 'http://localhost:8000'
-// Java Spring Boot execution service URL
-const JAVA_API_URL = 'http://localhost:8081'
 
 // Speed slider maps 0–100 (slider position) to MAX_DELAY–MIN_DELAY ms (execution interval).
 // Slider left = slowest (2 s per step), slider right = fastest (80 ms per step).
@@ -84,7 +82,6 @@ export default function VisualizerPage() {
   // output        – stdout captured from the user's code (print statements)
   // error         – error message string when execution fails
   // stale         – true when the editor code has changed since the last run
-  // language      – 'python' or 'java' selection for execution
   const [language, setLanguage] = useState('python')
   const [code, setCode] = useState(() => location.state?.code ?? DEFAULT_CODE)
   const [steps, setSteps] = useState([])
@@ -175,10 +172,7 @@ export default function VisualizerPage() {
       const inputs = inputValues.trim()
         ? inputValues.split(',').map(s => s.trim())
         : undefined
-      const isJava = language === 'java';
-      const url = isJava ? `${JAVA_API_URL}/execute-java` : `${API_URL}/execute`;
-      
-      const { data } = await axios.post(url, { code: src, inputs })
+      const { data } = await axios.post(`${API_URL}/execute`, { code: src, inputs })
       const capturedOutput = data.output ?? ''
       setOutput(capturedOutput)
       if (data.error) { setError(data.error); return null }
@@ -319,7 +313,7 @@ export default function VisualizerPage() {
 
             <div className="w-px h-4 bg-[#374151] shrink-0" />
 
-            {/* Language Selector */}
+            {/* Language Selector (Python only) */}
             <select
               value={language}
               onChange={(e) => {
@@ -331,7 +325,6 @@ export default function VisualizerPage() {
               className="px-2 py-1 text-xs bg-[#0B1120] border border-[#374151] rounded-md text-gray-300 font-mono focus:outline-none focus:border-blue-500 transition-colors cursor-pointer"
             >
               <option value="python">Python 3</option>
-              <option value="java">Java 17+</option>
             </select>
 
             <div className="w-px h-4 bg-[#374151] shrink-0" />
