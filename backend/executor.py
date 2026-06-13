@@ -161,6 +161,15 @@ def execute_code(code: str, inputs: Optional[List[str]] = None) -> Dict:
     steps: List[Dict] = []
     code_lines = code.split("\n")
 
+    # ── Pre-compute annotations ───────────────────────────────────
+    # detect_annotations runs regexes on source text.  Since the source never
+    # changes during execution, computing annotations for every trace event is
+    # wasteful.  Instead we do it once here, keyed by 1-based line number.
+    precomputed_annotations: Dict[int, List[Dict]] = {
+        lineno: detect_annotations(line)
+        for lineno, line in enumerate(code_lines, start=1)
+    }
+
     # ── Per-frame state ───────────────────────────────────────────
     # frame_pending : frame_id → lineno that has been entered but not yet
     #                 flushed (i.e. the line that most recently fired a
@@ -173,6 +182,10 @@ def execute_code(code: str, inputs: Optional[List[str]] = None) -> Dict:
     # call_stack    : ordered list of active function frames (excluding global).
     #                 Each entry: { "name": str, "locals": dict }
     call_stack: List[Dict] = []
+
+    # locals_cache  : frame_id → last serialized locals dict.
+    # Lets us skip get_user_vars() when the frame's locals haven't changed.
+    locals_cache: Dict[int, Dict] = {}
 
     # ── Helpers ───────────────────────────────────────────────────
 
@@ -194,12 +207,14 @@ def execute_code(code: str, inputs: Optional[List[str]] = None) -> Dict:
             return
         lc = line_text(lineno)
         scope = frame_names.get(id(frame), "global")
-        all_ann = (extra_ann or []) + detect_annotations(lc)
+        # Use pre-computed annotations; merge with any caller-supplied extras.
+        line_ann = precomputed_annotations.get(lineno, [])
+        all_ann = (extra_ann or []) + line_ann
         steps.append({
             "step":        len(steps) + 1,
             "line":        lineno,
             "code":        lc,
-            "memory":      get_user_vars(frame.f_locals),
+            "memory":      get_cached_locals(frame),
             "event":       event,
             "scope":       scope,
             "call_stack":  stack_snapshot(),
@@ -216,6 +231,23 @@ def execute_code(code: str, inputs: Optional[List[str]] = None) -> Dict:
         if fid in frame_pending:
             ln = frame_pending.pop(fid)
             record(frame, ln, "line")
+
+    def get_cached_locals(frame) -> Dict:
+        """
+        Return a serialized snapshot of the frame's locals.
+        Reuses the previous snapshot if locals haven't changed since the last
+        call, avoiding repeated deep-serialization on every trace event.
+        """
+        fid = id(frame)
+        current_raw = frame.f_locals
+        # Build a shallow key from the raw locals dict identity + its length.
+        # If length or identity changes we must re-serialize; otherwise reuse.
+        cached = locals_cache.get(fid)
+        fresh = get_user_vars(current_raw)
+        if cached is not None and cached == fresh:
+            return cached
+        locals_cache[fid] = fresh
+        return fresh
 
     # ── Tracer ────────────────────────────────────────────────────
 
@@ -257,7 +289,7 @@ def execute_code(code: str, inputs: Optional[List[str]] = None) -> Dict:
             # Keep the call-stack locals in sync with the current frame
             scope = frame_names.get(fid, "global")
             if call_stack and scope != "global":
-                call_stack[-1]["locals"] = get_user_vars(frame.f_locals)
+                call_stack[-1]["locals"] = get_cached_locals(frame)
 
             # The previously pending line for THIS frame has now finished —
             # record its post-execution state and mark the new line as pending.
@@ -271,7 +303,7 @@ def execute_code(code: str, inputs: Optional[List[str]] = None) -> Dict:
 
             # Sync locals one final time
             if call_stack and scope != "global":
-                call_stack[-1]["locals"] = get_user_vars(frame.f_locals)
+                call_stack[-1]["locals"] = get_cached_locals(frame)
 
             # Flush the last line inside this function (it fully executed)
             flush_pending(frame)
@@ -336,17 +368,21 @@ def execute_code(code: str, inputs: Optional[List[str]] = None) -> Dict:
     # Remove consecutive identical steps (same line + memory + event + scope).
     # "call" and "return" steps are NEVER deduplicated — they carry distinct
     # educational meaning even when memory hasn't changed.
+    #
+    # Uses a JSON hash string for O(1) comparison instead of Python dict ==
+    # which would be O(keys) per pair.
+    import json
     unique: List[Dict] = []
+    prev_hash: str = ""
     for step in steps:
-        if (
-            unique
-            and step["event"] not in ("call", "return", "exception")
-            and unique[-1]["line"]   == step["line"]
-            and unique[-1]["memory"] == step["memory"]
-            and unique[-1]["event"]  == step["event"]
-            and unique[-1]["scope"]  == step["scope"]
-        ):
-            continue
+        if step["event"] not in ("call", "return", "exception"):
+            # Build a compact fingerprint for this step.
+            key = f"{step['line']}|{step['event']}|{step['scope']}|{json.dumps(step['memory'], sort_keys=True, default=str)}"
+            if unique and key == prev_hash:
+                continue
+            prev_hash = key
+        else:
+            prev_hash = ""   # always allow call/return/exception through
         unique.append(step)
 
     for i, s in enumerate(unique):

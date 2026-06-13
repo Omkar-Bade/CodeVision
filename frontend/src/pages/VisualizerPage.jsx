@@ -13,7 +13,7 @@
  * while the main panels always fill the visible viewport height.
  */
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import axios from 'axios'
@@ -107,30 +107,44 @@ export default function VisualizerPage() {
   const intervalRef = useRef(null)
   const consoleRef = useRef(null)
 
-  // ── Derived values ───────────────────────────────────────────
-  // currentMemory – variables at the current step (shown in MemoryView)
-  // prevMemory    – variables at the previous step (used to detect changes/new vars)
-  // progress      – 0–100 percentage for the animated progress bar
-  // atStart/atEnd – boundary checks to disable step-back / step-forward buttons
-  // sliderVal     – converts the ms delay back to a 0-100 slider position
-  const currentMemory = currentStepIndex >= 0 ? (steps[currentStepIndex]?.memory ?? {}) : {}
-  const prevMemory = currentStepIndex > 0 ? (steps[currentStepIndex - 1]?.memory ?? {}) : {}
-  const currentScope = currentStepIndex >= 0 ? (steps[currentStepIndex]?.scope ?? 'global') : 'global'
-  const callStack = currentStepIndex >= 0 ? (steps[currentStepIndex]?.call_stack ?? []) : []
-  const progress = steps.length > 0 ? ((currentStepIndex + 1) / steps.length) * 100 : 0
+  // ── Derived values (memoized) ────────────────────────────────
+  // Only recompute when the relevant slice of state changes, not on every render.
+  const currentMemory = useMemo(
+    () => currentStepIndex >= 0 ? (steps[currentStepIndex]?.memory ?? {}) : {},
+    [steps, currentStepIndex]
+  )
+  const prevMemory = useMemo(
+    () => currentStepIndex > 0 ? (steps[currentStepIndex - 1]?.memory ?? {}) : {},
+    [steps, currentStepIndex]
+  )
+  const currentScope = useMemo(
+    () => currentStepIndex >= 0 ? (steps[currentStepIndex]?.scope ?? 'global') : 'global',
+    [steps, currentStepIndex]
+  )
+  const callStack = useMemo(
+    () => currentStepIndex >= 0 ? (steps[currentStepIndex]?.call_stack ?? []) : [],
+    [steps, currentStepIndex]
+  )
+  const progress = useMemo(
+    () => steps.length > 0 ? ((currentStepIndex + 1) / steps.length) * 100 : 0,
+    [steps.length, currentStepIndex]
+  )
   const atStart = currentStepIndex <= 0
-  const atEnd = currentStepIndex >= steps.length - 1
+  const atEnd   = currentStepIndex >= steps.length - 1
   const sliderVal = Math.round(((MAX_DELAY - speed) / (MAX_DELAY - MIN_DELAY)) * 100)
 
   // Mark steps stale whenever the editor content changes after a run.
   // This prompts the user to re-run before stepping.
-  const handleCodeChange = (v) => { setCode(v); if (steps.length > 0) setStale(true) }
+  const handleCodeChange = useCallback((v) => {
+    setCode(v)
+    if (steps.length > 0) setStale(true)
+  }, [steps.length])
 
   // Convert slider position (0–100) back to a delay in ms using a linear scale.
-  const handleSlider = (e) => {
+  const handleSlider = useCallback((e) => {
     const pct = Number(e.target.value)
     setSpeed(Math.round(MAX_DELAY - (pct / 100) * (MAX_DELAY - MIN_DELAY)))
-  }
+  }, [])
 
   // ── Auto-scroll console into view whenever an error is set ───
   // A short delay ensures the error block has rendered before scrolling.
@@ -202,8 +216,8 @@ export default function VisualizerPage() {
     }
   }
 
-  // ── Playback handlers ────────────────────────────────────────
-  const handleRun = async () => {
+  // ── Playback handlers (stable references via useCallback) ────
+  const handleRun = useCallback(async () => {
     if (isRunning) return
     // If steps are already loaded and not stale, just resume auto-play
     // instead of re-fetching from the backend.
@@ -212,21 +226,27 @@ export default function VisualizerPage() {
     }
     const s = await fetchSteps(code)
     if (s?.length) setIsRunning(true)
-  }
+  }, [isRunning, steps, stale, currentStepIndex, code])
 
-  const handlePause = () => setIsRunning(false)
+  const handlePause = useCallback(() => setIsRunning(false), [])
 
   // Clamp to valid index range to avoid out-of-bounds access.
-  const handleNext = () => setCurrentStepIndex(i => Math.min(i + 1, steps.length - 1))
-  const handlePrev = () => setCurrentStepIndex(i => Math.max(i - 1, 0))
+  const handleNext = useCallback(
+    () => setCurrentStepIndex(i => Math.min(i + 1, steps.length - 1)),
+    [steps.length]
+  )
+  const handlePrev = useCallback(
+    () => setCurrentStepIndex(i => Math.max(i - 1, 0)),
+    []
+  )
 
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
     setIsRunning(false); setCurrentStepIndex(-1); setSteps([])
     setOutput(''); setError(null); setStale(false)
-  }
+  }, [])
 
   // Save the current editor code to the saved_codes table
-  const handleSaveCode = async () => {
+  const handleSaveCode = useCallback(async () => {
     if (!user || saveStatus === 'saving') return
     setSaveStatus('saving')
     const { error: dbErr } = await supabase.from('saved_codes').insert({
@@ -242,7 +262,7 @@ export default function VisualizerPage() {
     }
     // Reset button label after 2 s
     setTimeout(() => setSaveStatus('idle'), 2000)
-  }
+  }, [user, saveStatus, code, language])
 
   // ── Auto-play interval ───────────────────────────────────────
   // Advances one step every `speed` ms while isRunning is true.
