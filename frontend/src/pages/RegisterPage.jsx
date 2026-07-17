@@ -10,15 +10,15 @@
  *
  * Flow:
  *   1. Validated form data is passed to `signUp` from AuthContext.
- *   2. `signUp` calls Supabase Auth and stores `name` in user metadata.
- *   3. A row is upserted in the `profiles` table so the display name is
- *      available for queries without inspecting raw auth metadata.
- *   4. Supabase may require email confirmation (depends on project config).
- *      After the API call succeeds, a confirmation screen is shown so the
- *      user knows to check their inbox before logging in.
+ *   2. `signUp` calls POST /auth/register on the FastAPI backend.
+ *   3. The backend hashes the password with bcrypt and inserts a row in
+ *      the MySQL `users` table, then issues access + refresh tokens.
+ *   4. Registration is instant — no email confirmation step.
+ *      On success a confirmation screen is shown and the user is auto-
+ *      redirected to /login after 2 seconds.
  *   5. On any error an inline message is displayed and the form stays open.
  */
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
@@ -56,6 +56,13 @@ export default function RegisterPage() {
     }
   }
 
+  // Auto-redirect to /login 2 seconds after successful registration
+  useEffect(() => {
+    if (!success) return
+    const timer = setTimeout(() => navigate('/login'), 2000)
+    return () => clearTimeout(timer)
+  }, [success, navigate])
+
   if (success) {
     return (
       <div className="min-h-screen bg-[#0B1120] flex flex-col">
@@ -67,7 +74,7 @@ export default function RegisterPage() {
             <div className="text-5xl mb-4">✅</div>
             <h2 className="text-xl font-bold text-white mb-2">Account created!</h2>
             <p className="text-gray-400 text-sm mb-6">
-              Check your email inbox and click the confirmation link, then sign in.
+              Your account is ready. Redirecting you to log in…
             </p>
             <Link to="/login"
               className="block w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-semibold text-sm text-center transition-colors">

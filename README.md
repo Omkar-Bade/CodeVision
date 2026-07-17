@@ -6,7 +6,7 @@
 [![Python](https://img.shields.io/badge/Python-3.8+-3776AB?logo=python&logoColor=white)](https://python.org)
 [![React](https://img.shields.io/badge/React-18+-61DAFB?logo=react&logoColor=black)](https://reactjs.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.109+-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
-[![Supabase](https://img.shields.io/badge/Supabase-Auth%20%26%20DB-3ECF8E?logo=supabase&logoColor=white)](https://supabase.com)
+[![MySQL](https://img.shields.io/badge/MySQL-8.0+-4479A1?logo=mysql&logoColor=white)](https://mysql.com)
 [![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3+-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
 
 ---
@@ -55,7 +55,8 @@ CodeVision:   Code → Execution Steps → Memory Snapshots → Variable Updates
 3. **Backend executes the code** using Python's `sys.settrace()` hook, capturing every line, function call, return, and exception as a structured step
 4. **Backend returns** a JSON array of execution states — each with line number, code text, memory snapshot, scope, call stack, and annotations
 5. **Frontend visualizes** these steps interactively — highlighting the current line, animating variable changes, and displaying the call stack
-6. **Supabase** handles user authentication and stores user data (profiles, saved code, execution history)
+6. **FastAPI auth endpoints** handle user registration, login, and JWT-based session management
+7. **MySQL database** stores user accounts (bcrypt-hashed passwords), saved code snippets, and execution history
 
 ---
 
@@ -63,9 +64,9 @@ CodeVision:   Code → Execution Steps → Memory Snapshots → Variable Updates
 
 | Layer | Technology |
 |-------|------------|
-| **Frontend** | React 18 (Vite) · Tailwind CSS · Framer Motion · Monaco Editor · React Router v6 |
-| **Backend** | Python · FastAPI · `sys.settrace` execution tracing · Uvicorn |
-| **Auth & Database** | Supabase (Auth + PostgreSQL) |
+| **Frontend** | React 18 (Vite) · Tailwind CSS · Framer Motion · Monaco Editor · React Router v6 · Axios |
+| **Backend** | Python · FastAPI · `sys.settrace` execution tracing · Uvicorn · SQLAlchemy ORM |
+| **Auth & Database** | MySQL 8.0 · JWT (python-jose) · bcrypt (passlib) · Self-hosted |
 | **API** | REST (JSON) over HTTP |
 | **Version Control** | GitHub |
 
@@ -74,30 +75,34 @@ CodeVision:   Code → Execution Steps → Memory Snapshots → Variable Updates
 ## 🏗️ Architecture
 
 ```
-┌─────────────────────────────────────────────┐
-│              React Frontend                  │
-│  Monaco Editor · Memory View · Execution     │
-│  Courses · Notes · Tutorials · Auth Pages    │
-└───────────────────┬─────────────────────────┘
-                    │  POST /execute (REST API)
-                    ▼
-┌─────────────────────────────────────────────┐
-│          Python FastAPI Backend              │
-│  main.py → executor.py → sys.settrace()      │
-│  Captures: line, memory, scope, call_stack   │
-└───────────────────┬─────────────────────────┘
-                    │  Supabase JS Client (from Frontend)
-                    ▼
-┌─────────────────────────────────────────────┐
-│           Supabase (PostgreSQL)              │
-│  Auth · profiles · saved_codes ·            │
-│  execution_history                           │
-└─────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────┐
+│                React Frontend                    │
+│  Monaco Editor · Memory View · Execution Panel  │
+│  Courses · Notes · Tutorials · Auth Pages        │
+└──────────────┬──────────────────────────────────┘
+               │  POST /execute  (no auth required)
+               │  POST /auth/*   (register/login/refresh)
+               │  GET|POST|DELETE /codes  (Bearer token)
+               │  POST|GET /history       (Bearer token)
+               ▼
+┌─────────────────────────────────────────────────┐
+│             Python FastAPI Backend               │
+│  main.py → executor.py → sys.settrace()         │
+│  routers/auth_routes.py  → JWT auth             │
+│  routers/code_routes.py  → saved code + history │
+│  auth.py → bcrypt + python-jose                 │
+│  database.py → SQLAlchemy + PyMySQL             │
+└──────────────┬──────────────────────────────────┘
+               │  SQLAlchemy ORM (parameterized queries)
+               ▼
+┌─────────────────────────────────────────────────┐
+│              MySQL 8.0 (codevision_db)           │
+│  users · saved_codes · execution_history         │
+│  refresh_tokens                                  │
+└─────────────────────────────────────────────────┘
 ```
 
-The frontend communicates with two services:
-- **Python FastAPI backend** — for code execution and tracing (runs locally)
-- **Supabase** — for user authentication and data persistence (cloud)
+All frontend API calls go through a single Axios instance (`src/api/index.js`) that automatically attaches JWT Bearer tokens and silently refreshes sessions on 401.
 
 ---
 
@@ -106,45 +111,54 @@ The frontend communicates with two services:
 ```
 CodeVision/
 │
-├── backend/                        # Python execution service
-│   ├── main.py                     # FastAPI app — POST /execute endpoint
-│   ├── executor.py                 # Core engine: sys.settrace() tracer
-│   └── requirements.txt            # fastapi, uvicorn, pydantic
+├── backend/                          # Python execution + auth service
+│   ├── main.py                       # FastAPI app — routes + CORS
+│   ├── executor.py                   # Core engine: sys.settrace() tracer (DO NOT MODIFY)
+│   ├── database.py                   # SQLAlchemy engine + get_db() dependency
+│   ├── models.py                     # ORM models: User, SavedCode, ExecutionHistory, RefreshToken
+│   ├── schemas.py                    # Pydantic v2 request/response models
+│   ├── auth.py                       # bcrypt hashing + JWT creation + get_current_user()
+│   ├── routers/
+│   │   ├── auth_routes.py            # POST /auth/register|login|refresh|logout · GET /auth/me
+│   │   └── code_routes.py            # POST|GET|DELETE /codes · POST|GET /history
+│   ├── requirements.txt              # All Python dependencies
+│   └── .env.example                  # Environment variable template
 │
 ├── frontend/
 │   ├── src/
-│   │   ├── App.jsx                 # Route tree + AuthProvider wrapper
-│   │   ├── main.jsx                # React entry point
-│   │   ├── index.css               # Global styles + Tailwind theme
+│   │   ├── App.jsx                   # Route tree + AuthProvider wrapper
+│   │   ├── main.jsx                  # React entry point
+│   │   ├── index.css                 # Global styles + Tailwind theme
+│   │   ├── api/
+│   │   │   └── index.js              # Axios instance: Bearer token + silent refresh interceptor
 │   │   ├── context/
-│   │   │   └── AuthContext.jsx     # Supabase auth state (signUp/signIn/signOut)
+│   │   │   └── AuthContext.jsx       # JWT auth state (signUp/signIn/signOut/session restore)
 │   │   ├── lib/
-│   │   │   ├── supabase.js         # Supabase client initialisation
-│   │   │   ├── pythonLinter.js     # Client-side Python linter for Monaco
-│   │   │   └── errorExplainer.js  # Beginner-friendly error explanations
+│   │   │   ├── pythonLinter.js       # Client-side Python linter for Monaco
+│   │   │   └── errorExplainer.js     # Beginner-friendly error explanations
 │   │   ├── pages/
-│   │   │   ├── VisualizerPage.jsx  # Main workspace (editor + panels + controls)
-│   │   │   ├── LoginPage.jsx       # Login form → Supabase signIn
-│   │   │   ├── RegisterPage.jsx    # Register form → Supabase signUp
-│   │   │   └── GuidePage.jsx       # Platform usage guide
+│   │   │   ├── VisualizerPage.jsx    # Main workspace (editor + panels + save/load code)
+│   │   │   ├── LoginPage.jsx         # Login form → POST /auth/login
+│   │   │   ├── RegisterPage.jsx      # Register form → POST /auth/register
+│   │   │   └── GuidePage.jsx         # Platform usage guide
 │   │   └── components/
-│   │       ├── Navbar.jsx          # Fixed top nav (auth-aware)
+│   │       ├── Navbar.jsx            # Fixed top nav (auth-aware)
 │   │       ├── Footer.jsx
-│   │       ├── LandingPage.jsx     # Home page / hero
-│   │       ├── ProtectedRoute.jsx  # Auth guard for protected routes
-│   │       ├── CodeEditor.jsx      # Monaco Editor + linter integration
-│   │       ├── ExecutionPanel.jsx  # Code viewer with line highlighting
-│   │       ├── MemoryView.jsx      # Variable memory + call stack display
+│   │       ├── LandingPage.jsx       # Home page / hero
+│   │       ├── ProtectedRoute.jsx    # JWT auth guard for protected routes
+│   │       ├── CodeEditor.jsx        # Monaco Editor + linter integration
+│   │       ├── ExecutionPanel.jsx    # Code viewer with line highlighting
+│   │       ├── MemoryView.jsx        # Variable memory + call stack display
 │   │       ├── ErrorExplanation.jsx
-│   │       ├── Courses.jsx         # Python courses page
-│   │       ├── Notes.jsx           # Concept notes page
-│   │       └── Tutorials.jsx       # Interactive tutorials (Run in Visualizer)
+│   │       ├── Courses.jsx           # Python courses page
+│   │       ├── Notes.jsx             # Concept notes page
+│   │       └── Tutorials.jsx         # Interactive tutorials (Run in Visualizer)
 │   ├── .env.example
 │   ├── package.json
 │   ├── vite.config.js
 │   └── tailwind.config.js
 │
-├── .github/                        # Issue / PR templates
+├── .github/                          # Issue / PR templates
 ├── CONTRIBUTING.md
 ├── LICENSE
 ├── PROJECT_SUMMARY.md
@@ -159,7 +173,7 @@ CodeVision/
 
 - **Python 3.8+**
 - **Node.js 18+**
-- A free [Supabase](https://supabase.com) project (for auth and data persistence)
+- **MySQL 8.0+** running locally (or any MySQL-compatible host)
 
 ### 1. Clone the repository
 
@@ -168,7 +182,88 @@ git clone https://github.com/Omkar-Bade/CodeVision.git
 cd CodeVision
 ```
 
-### 2. Start the Python backend
+### 2. Create the MySQL database
+
+Open MySQL Workbench or the MySQL CLI and run:
+
+```sql
+CREATE DATABASE IF NOT EXISTS codevision_db
+  CHARACTER SET utf8mb4
+  COLLATE utf8mb4_unicode_ci;
+
+USE codevision_db;
+
+CREATE TABLE users (
+  id            INT AUTO_INCREMENT PRIMARY KEY,
+  full_name     VARCHAR(100)  NOT NULL,
+  email         VARCHAR(150)  NOT NULL UNIQUE,
+  password_hash VARCHAR(255)  NOT NULL,
+  created_at    TIMESTAMP     DEFAULT CURRENT_TIMESTAMP,
+  updated_at    TIMESTAMP     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+CREATE TABLE saved_codes (
+  id           INT AUTO_INCREMENT PRIMARY KEY,
+  user_id      INT           NOT NULL,
+  title        VARCHAR(150)  DEFAULT 'Untitled',
+  code_content MEDIUMTEXT    NOT NULL,
+  language     VARCHAR(20)   DEFAULT 'python',
+  created_at   TIMESTAMP     DEFAULT CURRENT_TIMESTAMP,
+  updated_at   TIMESTAMP     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_saved_codes_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX idx_saved_codes_user (user_id)
+) ENGINE=InnoDB;
+
+CREATE TABLE execution_history (
+  id             INT AUTO_INCREMENT PRIMARY KEY,
+  user_id        INT           NOT NULL,
+  saved_code_id  INT           NULL,
+  code_snapshot  MEDIUMTEXT    NOT NULL,
+  total_steps    INT           DEFAULT 0,
+  had_error      BOOLEAN       DEFAULT FALSE,
+  output_summary TEXT,
+  executed_at    TIMESTAMP     DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_history_user      FOREIGN KEY (user_id)       REFERENCES users(id)       ON DELETE CASCADE,
+  CONSTRAINT fk_history_saved_code FOREIGN KEY (saved_code_id) REFERENCES saved_codes(id) ON DELETE SET NULL,
+  INDEX idx_history_user (user_id)
+) ENGINE=InnoDB;
+
+CREATE TABLE refresh_tokens (
+  id         INT AUTO_INCREMENT PRIMARY KEY,
+  user_id    INT           NOT NULL,
+  token_hash VARCHAR(255)  NOT NULL,
+  expires_at TIMESTAMP     NOT NULL,
+  revoked    BOOLEAN       DEFAULT FALSE,
+  created_at TIMESTAMP     DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_tokens_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX idx_tokens_user (user_id)
+) ENGINE=InnoDB;
+```
+
+### 3. Configure the backend
+
+```bash
+cd backend
+cp .env.example .env
+```
+
+Edit `backend/.env`:
+
+```env
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=your_mysql_password   # if password contains @ or special chars, write them as-is
+DB_NAME=codevision_db
+
+# Generate with: python -c "import secrets; print(secrets.token_hex(32))"
+JWT_SECRET_KEY=your-generated-secret-here
+JWT_ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+REFRESH_TOKEN_EXPIRE_DAYS=7
+```
+
+### 4. Start the Python backend
 
 ```bash
 cd backend
@@ -176,30 +271,34 @@ pip install -r requirements.txt
 python -m uvicorn main:app --reload
 ```
 
-Backend runs at **http://localhost:8000**
+Backend runs at **http://localhost:8000**  
+Interactive API docs: **http://localhost:8000/docs**
 
-### 3. Start the React frontend
+### 5. Configure and start the frontend
 
 ```bash
 cd frontend
 cp .env.example .env
-# Fill in your Supabase credentials in .env
+# .env already contains: VITE_API_URL=http://localhost:8000
 npm install
 npm run dev
 ```
 
-Frontend runs at **http://localhost:5173**
+Frontend runs at **http://localhost:3000** (or **5173** — whichever Vite picks)
 
-### 4. Configure environment variables
+---
 
-Create `frontend/.env`:
+## 🔐 Authentication & Security
 
-```env
-VITE_SUPABASE_URL=https://<your-project>.supabase.co
-VITE_SUPABASE_ANON_KEY=<your-anon-public-key>
-```
-
-Get these from: [Supabase Dashboard](https://supabase.com/dashboard) → Project Settings → API.
+| Concern | Implementation |
+|---|---|
+| **Password storage** | bcrypt (cost factor 12) via passlib — plaintext never stored or logged |
+| **Session tokens** | Short-lived HS256 JWT (30 min) + long-lived refresh token (7 days) |
+| **Refresh token storage** | SHA-256 hash stored in DB; plaintext held in browser `sessionStorage` |
+| **Token rotation** | Each `/auth/refresh` call revokes the old refresh token and issues a new one |
+| **SQL injection** | All queries through SQLAlchemy ORM — no raw string-formatted SQL |
+| **Ownership checks** | Every `/codes` and `/history` endpoint filters by `user_id == current_user.id` |
+| **CORS** | Restricted to known frontend origins; `allow_credentials=True` for Bearer header |
 
 ---
 
@@ -218,7 +317,8 @@ Get these from: [Supabase Dashboard](https://supabase.com/dashboard) → Project
 | **Console Output** | Captures all `print()` output and runtime errors |
 | **Playback Controls** | Run · Pause · Step Forward · Step Back · Restart · Speed slider |
 | **Input Simulation** | Pre-fill values for `input()` calls before running |
-| **Save Code** | One-click save to Supabase `saved_codes` table |
+| **💾 Save Code** | One-click save to MySQL `saved_codes` table |
+| **📂 My Codes** | Load previously saved code back into the editor |
 | **Resizable Panels** | Drag-to-resize editor, execution, and memory panels |
 | **Keyboard Shortcuts** | `Space` play/pause · `←→` step · `Ctrl+R` restart |
 
@@ -241,19 +341,42 @@ Get these from: [Supabase Dashboard](https://supabase.com/dashboard) → Project
 | `/tutorials` | Tutorials | Interactive tutorials with "▶ Run in Visualizer" button |
 | `/guide` | Guide | Platform usage guide for new users |
 
-### Authentication (Supabase)
+### Authentication (FastAPI + MySQL)
 
-- Register with name, email, and password
-- Login with email and password
-- Persistent sessions restored on page reload
+- Register with name, email, and password (bcrypt-hashed, never stored plain)
+- Login with email and password → receive JWT access + refresh tokens
+- Silent session restore on page load using stored refresh token
 - Protected routes: `/visualizer`, `/courses`, `/notes`, `/tutorials`
-- User data stored in Supabase: `profiles`, `saved_codes`, `execution_history`
+- Token revocation on logout (refresh token marked `revoked=TRUE` in DB)
 
 ---
 
 ## 🔌 API Reference
 
-### `POST /execute`
+### Auth Endpoints
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `POST` | `/auth/register` | Public | Create account, returns token pair |
+| `POST` | `/auth/login` | Public | Login, returns token pair |
+| `POST` | `/auth/refresh` | Public | Exchange refresh token for new access token |
+| `POST` | `/auth/logout` | Bearer | Revoke refresh token |
+| `GET` | `/auth/me` | Bearer | Get current user profile |
+
+### Code Endpoints
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `POST` | `/codes` | Bearer | Save a code snippet |
+| `GET` | `/codes` | Bearer | List all saved snippets (summary) |
+| `GET` | `/codes/{id}` | Bearer | Get one snippet with full code |
+| `DELETE` | `/codes/{id}` | Bearer | Delete a snippet (ownership checked) |
+| `POST` | `/history` | Bearer | Log an execution event |
+| `GET` | `/history` | Bearer | List execution history |
+
+### Execution Endpoint
+
+#### `POST /execute` (No auth required)
 
 Execute Python code and return a step-by-step trace.
 
@@ -280,16 +403,6 @@ Execute Python code and return a step-by-step trace.
       "scope": "global",
       "call_stack": [],
       "annotations": []
-    },
-    {
-      "step": 2,
-      "line": 1,
-      "code": "def greet(name):",
-      "memory": { "name": { "value": "World", "size_bytes": 54, "type": "str" } },
-      "event": "call",
-      "scope": "greet",
-      "call_stack": [{ "name": "greet", "locals": {} }],
-      "annotations": [{ "type": "call", "detail": "Calling greet() — new stack frame created" }]
     }
   ],
   "output": "Hello, World\n",
@@ -325,6 +438,7 @@ Execute Python code and return a step-by-step trace.
 - Support for additional programming languages (JavaScript, Java)
 - Exportable execution trace as PDF / video
 - Advanced debugging tools with breakpoints
+- Cloud-hosted MySQL (managed database migration)
 
 ---
 

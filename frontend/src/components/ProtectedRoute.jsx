@@ -3,8 +3,8 @@ import { useAuth } from '../context/AuthContext'
 
 /**
  * Wraps a route element and redirects to /login if the user is not
- * authenticated. Shows a minimal loading screen while the auth session
- * is being hydrated from Supabase on first render.
+ * authenticated. Shows a minimal loading screen while the initial
+ * silent token refresh runs on app load (replaces Supabase's getSession).
  */
 export default function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
