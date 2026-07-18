@@ -432,14 +432,14 @@ export default function VisualizerPage() {
 
             {/* Input simulation field — values fed to input() calls */}
             <div className="flex items-center gap-1.5 shrink-0">
-              <span className="text-xs text-gray-500 font-mono" title="Values for input() calls, comma-separated">⌨️</span>
+              <span className="text-xs text-gray-400 font-mono whitespace-nowrap">⌨ Inputs:</span>
               <input
                 type="text"
                 value={inputValues}
                 onChange={e => setInputValues(e.target.value)}
-                placeholder="input values…"
-                title="Comma-separated values fed to input() calls"
-                className="w-28 px-2 py-0.5 text-xs bg-[#0B1120] border border-[#374151]
+                placeholder="e.g. Alice, 25, 3.14"
+                title="Comma-separated values fed to input() calls in order. Example: Alice, 25"
+                className="w-40 px-2 py-0.5 text-xs bg-[#0B1120] border border-[#374151]
                            rounded-md text-gray-300 placeholder-gray-600
                            focus:outline-none focus:border-blue-500 transition-colors font-mono"
               />
