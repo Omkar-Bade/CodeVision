@@ -158,6 +158,23 @@ export default function VisualizerPage() {
     setSpeed(Math.round(MAX_DELAY - (pct / 100) * (MAX_DELAY - MIN_DELAY)))
   }, [])
 
+  // toolsOpen – controls visibility of the Tools dropdown
+  const [toolsOpen, setToolsOpen] = useState(false)
+  const toolsDropdownRef = useRef(null)
+
+  // Close tools dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (toolsDropdownRef.current && !toolsDropdownRef.current.contains(e.target)) {
+        setToolsOpen(false)
+      }
+    }
+    if (toolsOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [toolsOpen])
+
   // ── Auto-scroll console into view whenever an error is set ───
   // A short delay ensures the error block has rendered before scrolling.
   useEffect(() => {
@@ -392,97 +409,148 @@ export default function VisualizerPage() {
         <div className="sticky top-16 z-40 bg-[#111827] border-b border-[#1F2937] px-4 py-2 shrink-0">
           <div className="flex items-center gap-2 flex-wrap min-h-[2.25rem]">
 
-            {/* Toggle button — hides/shows the Monaco Editor panel */}
-            <button
-              onClick={() => setEditorVisible(v => !v)}
-              title={editorVisible ? 'Hide Editor' : 'Show Editor'}
-              className={`flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md border
-                          font-mono transition-colors duration-150 shrink-0
-                          ${editorVisible
-                  ? 'bg-blue-600/15 border-blue-600/40 text-blue-400'
-                  : 'bg-transparent border-[#374151] text-gray-400 hover:text-white hover:bg-[#1F2937]'}`}
-            >
-              {/* Code brackets icon */}
-              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" />
-              </svg>
-              {editorVisible ? 'Hide Editor' : 'Show Editor'}
-            </button>
-
-            <div className="w-px h-4 bg-[#374151] shrink-0" />
-
-            {/* Language Selector (Python only) */}
-            <select
-              value={language}
-              onChange={(e) => {
-                setLanguage(e.target.value);
-                setSteps([]);
-                setCurrentStepIndex(-1);
-                setOutput('');
-              }}
-              className="px-2 py-1 text-xs bg-[#0B1120] border border-[#374151] rounded-md text-gray-300 font-mono focus:outline-none focus:border-blue-500 transition-colors cursor-pointer"
-            >
-              <option value="python">Python 3</option>
-            </select>
-
-            <div className="w-px h-4 bg-[#374151] shrink-0" />
-
-            {/* Mode toggle — Step-by-step vs Interactive Console */}
-            <div className="flex items-center bg-[#0B1120] border border-[#374151] rounded-md overflow-hidden shrink-0">
+            {/* 🛠️ Tools Dropdown — consolidates Editor, Language, Execution, and File actions */}
+            <div className="relative shrink-0" ref={toolsDropdownRef}>
               <button
-                onClick={() => setMode('visualizer')}
-                className={`px-2.5 py-1 text-xs font-mono transition-colors duration-150
-                            ${mode === 'visualizer'
-                    ? 'bg-blue-600/20 text-blue-400 border-r border-blue-600/30'
-                    : 'text-gray-400 hover:text-white hover:bg-[#1F2937] border-r border-[#374151]'}`}
+                onClick={() => setToolsOpen(v => !v)}
+                title="Tools"
+                className={`flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md border
+                            font-mono transition-colors duration-150 shrink-0
+                            ${toolsOpen
+                    ? 'bg-blue-600/15 border-blue-600/40 text-blue-400'
+                    : 'bg-[#0B1120] border-[#374151] text-gray-300 hover:text-white hover:bg-[#1F2937]'}`}
               >
-                🔍 Step-by-step
+                <span>🛠️ Tools</span>
+                <svg
+                  className={`w-3 h-3 text-gray-400 transition-transform duration-150 ${toolsOpen ? 'rotate-180' : ''}`}
+                  viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                  strokeLinecap="round" strokeLinejoin="round"
+                >
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
               </button>
-              <button
-                onClick={() => setMode('interactive')}
-                className={`px-2.5 py-1 text-xs font-mono transition-colors duration-150
-                            ${mode === 'interactive'
-                    ? 'bg-green-600/20 text-green-400'
-                    : 'text-gray-400 hover:text-white hover:bg-[#1F2937]'}`}
-              >
-                ⌨ Interactive
-              </button>
+
+              {/* Dropdown Menu */}
+              <AnimatePresence>
+                {toolsOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 6, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 6, scale: 0.98 }}
+                    transition={{ duration: 0.12 }}
+                    className="absolute left-0 mt-1.5 w-60 bg-[#111827] border border-[#1F2937]
+                               rounded-xl shadow-2xl z-50 overflow-hidden font-mono text-xs py-1.5
+                               divide-y divide-[#1F2937]"
+                  >
+                    {/* Section 1: Editor */}
+                    <div className="px-3 py-1.5">
+                      <div className="text-[10px] uppercase font-semibold text-gray-500 tracking-wider mb-1">Editor</div>
+                      <button
+                        onClick={() => { setEditorVisible(v => !v); setToolsOpen(false); }}
+                        className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-md
+                                   text-gray-300 hover:text-white hover:bg-[#1F2937] transition-colors"
+                      >
+                        <span className="flex items-center gap-2">
+                          <svg className="w-3.5 h-3.5 text-gray-400" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" />
+                          </svg>
+                          <span>{editorVisible ? 'Hide Editor' : 'Show Editor'}</span>
+                        </span>
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono ${editorVisible ? 'bg-blue-600/20 text-blue-400' : 'bg-gray-800 text-gray-500'}`}>
+                          {editorVisible ? 'ON' : 'OFF'}
+                        </span>
+                      </button>
+                    </div>
+
+                    {/* Section 2: Language */}
+                    <div className="px-3 py-1.5">
+                      <div className="text-[10px] uppercase font-semibold text-gray-500 tracking-wider mb-1">Language</div>
+                      <div className="flex items-center justify-between px-2.5 py-1.5">
+                        <span className="flex items-center gap-2 text-gray-300">
+                          <span>🐍</span>
+                          <span>Language</span>
+                        </span>
+                        <select
+                          value={language}
+                          onChange={(e) => {
+                            setLanguage(e.target.value);
+                            setSteps([]);
+                            setCurrentStepIndex(-1);
+                            setOutput('');
+                            setToolsOpen(false);
+                          }}
+                          className="px-2 py-0.5 text-xs bg-[#0B1120] border border-[#374151] rounded-md
+                                     text-gray-300 font-mono focus:outline-none focus:border-blue-500 transition-colors cursor-pointer"
+                        >
+                          <option value="python">Python 3</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Section 3: Execution */}
+                    <div className="px-3 py-1.5">
+                      <div className="text-[10px] uppercase font-semibold text-gray-500 tracking-wider mb-1">Execution</div>
+                      <div className="space-y-0.5">
+                        <button
+                          onClick={() => { setMode('visualizer'); setToolsOpen(false); }}
+                          className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-md transition-colors ${mode === 'visualizer' ? 'bg-blue-600/20 text-blue-400 font-medium' : 'text-gray-300 hover:text-white hover:bg-[#1F2937]'}`}
+                        >
+                          <span className="flex items-center gap-2">
+                            <span>🔍</span>
+                            <span>Step-by-step</span>
+                          </span>
+                          {mode === 'visualizer' && <span className="text-blue-400 font-bold">✓</span>}
+                        </button>
+                        <button
+                          onClick={() => { setMode('interactive'); setToolsOpen(false); }}
+                          className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-md transition-colors ${mode === 'interactive' ? 'bg-green-600/20 text-green-400 font-medium' : 'text-gray-300 hover:text-white hover:bg-[#1F2937]'}`}
+                        >
+                          <span className="flex items-center gap-2">
+                            <span>⌨</span>
+                            <span>Interactive</span>
+                          </span>
+                          {mode === 'interactive' && <span className="text-green-400 font-bold">✓</span>}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Section 4: Files */}
+                    <div className="px-3 py-1.5">
+                      <div className="text-[10px] uppercase font-semibold text-gray-500 tracking-wider mb-1">Files</div>
+                      <div className="space-y-0.5">
+                        <button
+                          onClick={() => { setToolsOpen(false); handleSaveCode(); }}
+                          disabled={!user || saveStatus === 'saving'}
+                          className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-md text-gray-300 hover:text-white hover:bg-[#1F2937] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <span className="flex items-center gap-2">
+                            <span>💾</span>
+                            <span>
+                              {saveStatus === 'saving' ? 'Saving…'
+                                : saveStatus === 'saved' ? 'Saved!'
+                                  : saveStatus === 'error' ? 'Failed'
+                                    : 'Save Code'}
+                            </span>
+                          </span>
+                          {saveStatus === 'saved' && <span className="text-green-400 font-bold">✓</span>}
+                        </button>
+
+                        {user && (
+                          <button
+                            onClick={() => { setToolsOpen(false); setShowCodesModal(true); fetchSavedCodes(); }}
+                            className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-gray-300 hover:text-white hover:bg-[#1F2937] transition-colors"
+                          >
+                            <span>📂</span>
+                            <span>My Codes</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
-
-            <div className="w-px h-4 bg-[#374151] shrink-0" />
-
-            {/* Save Code button — persists current editor code to backend */}
-            <button
-              onClick={handleSaveCode}
-              disabled={!user || saveStatus === 'saving'}
-              className={`flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md border
-                          font-mono transition-colors duration-150 shrink-0 disabled:opacity-50
-                          ${saveStatus === 'saved'
-                  ? 'bg-green-600/15 border-green-600/40 text-green-400'
-                  : saveStatus === 'error'
-                    ? 'bg-red-600/15 border-red-600/40 text-red-400'
-                    : 'bg-transparent border-[#374151] text-gray-400 hover:text-white hover:bg-[#1F2937]'}`}
-            >
-              {saveStatus === 'saving' ? '💾 Saving…'
-                : saveStatus === 'saved' ? '✓ Saved!'
-                  : saveStatus === 'error' ? '✕ Failed'
-                    : '💾 Save Code'}
-            </button>
-
-            <div className="w-px h-4 bg-[#374151] shrink-0" />
-
-            {/* My Codes button — open saved codes modal */}
-            {user && (
-              <button
-                onClick={() => { setShowCodesModal(true); fetchSavedCodes() }}
-                className="flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md border
-                           font-mono transition-colors duration-150 shrink-0
-                           bg-transparent border-[#374151] text-gray-400 hover:text-white hover:bg-[#1F2937]"
-              >
-                📂 My Codes
-              </button>
-            )}
 
             {/* ── Visualizer-only toolbar controls ─────────────────── */}
             {mode === 'visualizer' && (
