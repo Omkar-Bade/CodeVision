@@ -142,7 +142,15 @@ async def ws_execute(ws: WebSocket):
             sys.stdout = streaming_stdout
             sys.stderr = streaming_stdout
 
-            exec_globals = {"input": _interactive_input}
+            from executor import verify_code_security, get_safe_builtins, SecurityError
+            verify_code_security(code)
+
+            safe_builtins = get_safe_builtins()
+            safe_builtins['input'] = _interactive_input
+            exec_globals = {
+                "__builtins__": safe_builtins,
+            }
+
             compiled = compile(code, "<codevision>", "exec")
             exec(compiled, exec_globals)  # noqa: S102
 
@@ -150,6 +158,11 @@ async def ws_execute(ws: WebSocket):
             loop.call_soon_threadsafe(
                 send_queue.put_nowait,
                 {"type": "done"},
+            )
+        except SecurityError as e:
+            loop.call_soon_threadsafe(
+                send_queue.put_nowait,
+                {"type": "error", "message": f"SecurityError: {str(e)}"},
             )
         except SystemExit:
             # Cancelled or user called exit() — not an error to report

@@ -100,6 +100,12 @@ export default function VisualizerPage() {
   // saveStatus – feedback state for the Save Code button
   const [saveStatus, setSaveStatus] = useState('idle') // 'idle' | 'saving' | 'saved' | 'error'
 
+  // Save-modal state — VS Code-style "Save As" dialog
+  const [saveModalOpen, setSaveModalOpen]   = useState(false)
+  const [saveFilename, setSaveFilename]     = useState('')
+  const [saveError, setSaveError]           = useState('')
+  const saveInputRef = useRef(null)
+
   // inputValues – comma-separated string of values fed to input() calls during execution
   const [inputValues, setInputValues] = useState('')
 
@@ -160,6 +166,14 @@ export default function VisualizerPage() {
     }
   }, [error])
 
+  // ── Auto-focus the save-modal input when it opens ────────────
+  useEffect(() => {
+    if (saveModalOpen) {
+      // Small delay so the modal has mounted before we focus
+      setTimeout(() => saveInputRef.current?.focus(), 50)
+    }
+  }, [saveModalOpen])
+
   // ── Global keyboard shortcuts ────────────────────────────────
   // Space    → play / pause
   // ←  / →  → step backward / forward
@@ -170,6 +184,7 @@ export default function VisualizerPage() {
     const handler = (e) => {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return
       if (e.target.closest?.('.monaco-editor')) return   // let Monaco handle its own keys
+      if (saveModalOpen) return                          // don't hijack keys while naming a file
 
       if (e.code === 'Space') { e.preventDefault(); isRunning ? handlePause() : handleRun() }
       if (e.code === 'ArrowRight') { e.preventDefault(); if (!atEnd) handleNext() }
@@ -179,7 +194,7 @@ export default function VisualizerPage() {
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isRunning, atStart, atEnd, steps.length, currentStepIndex])
+  }, [isRunning, atStart, atEnd, steps.length, currentStepIndex, saveModalOpen])
 
   // ── Fetch execution steps from backend ───────────────────────
   // POST /execute with the current code; backend returns:
@@ -252,23 +267,39 @@ export default function VisualizerPage() {
     setOutput(''); setError(null); setStale(false)
   }, [])
 
-  // Save the current editor code via POST /codes
-  const handleSaveCode = useCallback(async () => {
+  // ── Save Code — VS Code-style modal workflow ─────────────────
+  // Step 1: clicking the toolbar button opens the filename modal
+  const handleSaveCode = useCallback(() => {
     if (!user || saveStatus === 'saving') return
+    setSaveFilename('')
+    setSaveError('')
+    setSaveModalOpen(true)
+  }, [user, saveStatus])
+
+  // Step 2: user confirms the filename → validate → call API
+  const handleSaveConfirm = useCallback(async () => {
+    const trimmed = saveFilename.trim()
+    if (!trimmed) { setSaveError('Filename cannot be empty.'); return }
+    if (trimmed.length > 100) { setSaveError('Filename must be 100 characters or fewer.'); return }
+
+    setSaveError('')
+    setSaveModalOpen(false)
     setSaveStatus('saving')
     try {
       await api.post('/codes', {
-        title:        'Untitled',
+        title:        trimmed,
         code_content: code,
         language:     language,
       })
       setSaveStatus('saved')
+      // Refresh the saved-codes list if the modal was previously loaded
+      if (user) fetchSavedCodes()
     } catch (err) {
       console.warn('Save failed:', err.message)
       setSaveStatus('error')
     }
     setTimeout(() => setSaveStatus('idle'), 2000)
-  }, [user, saveStatus, code, language])
+  }, [saveFilename, code, language, user])
 
   // Fetch the list of saved codes for the modal
   const fetchSavedCodes = useCallback(async () => {
@@ -817,6 +848,101 @@ export default function VisualizerPage() {
           </div>
         </div>
       )}
+
+      {/* ── Save Filename Modal (VS Code-style) ──────────────────
+          Opens when the user clicks "💾 Save Code".  Asks for a
+          filename before calling POST /codes.
+      ─────────────────────────────────────────────────────────── */}
+      <AnimatePresence>
+        {saveModalOpen && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setSaveModalOpen(false)}
+          >
+            <motion.div
+              className="w-full max-w-sm bg-[#111827] border border-[#1F2937] rounded-xl shadow-2xl overflow-hidden"
+              initial={{ opacity: 0, scale: 0.95, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 12 }}
+              transition={{ duration: 0.15 }}
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#1F2937]">
+                <span className="text-white font-semibold text-sm font-mono">💾 Save Code</span>
+                <button
+                  onClick={() => setSaveModalOpen(false)}
+                  className="text-gray-500 hover:text-white text-xs px-2 py-1 rounded hover:bg-[#1F2937] transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="px-5 py-4">
+                <label className="block text-xs text-gray-400 font-mono mb-2">
+                  Enter a filename for your code
+                </label>
+                <input
+                  ref={saveInputRef}
+                  type="text"
+                  value={saveFilename}
+                  onChange={e => {
+                    setSaveFilename(e.target.value)
+                    if (saveError) setSaveError('')
+                  }}
+                  onKeyDown={e => { if (e.key === 'Enter') handleSaveConfirm() }}
+                  placeholder="Untitled"
+                  maxLength={100}
+                  className={`w-full px-3 py-2 text-sm bg-[#0B1120] border rounded-lg text-gray-200
+                              placeholder-gray-600 font-mono transition-colors duration-150
+                              focus:outline-none focus:ring-1
+                              ${saveError
+                      ? 'border-red-600/60 focus:border-red-500 focus:ring-red-500/30'
+                      : 'border-[#374151] focus:border-blue-500 focus:ring-blue-500/30'}`}
+                />
+                {/* Inline validation error */}
+                <AnimatePresence>
+                  {saveError && (
+                    <motion.p
+                      className="text-red-400 text-xs font-mono mt-1.5"
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -4 }}
+                    >
+                      {saveError}
+                    </motion.p>
+                  )}
+                </AnimatePresence>
+                <p className="text-gray-600 text-[10px] font-mono mt-1.5 text-right">
+                  {saveFilename.trim().length} / 100
+                </p>
+              </div>
+
+              {/* Footer — action buttons */}
+              <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-[#1F2937]">
+                <button
+                  onClick={() => setSaveModalOpen(false)}
+                  className="px-3.5 py-1.5 text-xs font-mono text-gray-400 border border-[#374151]
+                             rounded-lg hover:text-white hover:bg-[#1F2937] transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveConfirm}
+                  className="px-3.5 py-1.5 text-xs font-mono text-white bg-blue-600 border border-blue-500
+                             rounded-lg hover:bg-blue-500 transition-colors"
+                >
+                  Save
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

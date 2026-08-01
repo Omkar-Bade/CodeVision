@@ -11,7 +11,7 @@ password_hash is NEVER included in any response model.
 
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 
 # ── Shared config ─────────────────────────────────────────────────────────────
@@ -63,6 +63,14 @@ class SavedCodeCreate(BaseModel):
     title:        str = Field(default="Untitled", max_length=150)
     code_content: str = Field(..., min_length=1)
     language:     str = Field(default="python", max_length=20)
+
+    @field_validator("title", mode="before")
+    @classmethod
+    def clean_title(cls, v):
+        """Trim whitespace; fall back to 'Untitled' if empty."""
+        if isinstance(v, str):
+            v = v.strip()
+        return v if v else "Untitled"
 
 
 class SavedCodeResponse(ORMBase):

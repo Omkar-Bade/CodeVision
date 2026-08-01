@@ -44,8 +44,58 @@ import sys
 import io
 import re
 import traceback
+import ast
+import builtins
 from typing import Any, Dict, List, Optional
 from collections import deque
+
+class SecurityError(Exception):
+    pass
+
+SAFE_DUNDER = {
+    '__init__', '__str__', '__repr__', '__len__', '__getitem__', '__setitem__',
+    '__iter__', '__next__', '__eq__', '__lt__', '__gt__', '__le__', '__ge__',
+    '__ne__', '__add__', '__sub__', '__mul__', '__truediv__', '__floordiv__',
+    '__mod__', '__pow__', '__contains__', '__name__', '__doc__', '__annotations__',
+}
+
+class SecurityVisitor(ast.NodeVisitor):
+    def visit_Name(self, node):
+        if node.id.startswith('__') and node.id not in SAFE_DUNDER:
+            raise SecurityError(f"Use of restricted identifier '{node.id}' is blocked")
+        self.generic_visit(node)
+
+    def visit_Attribute(self, node):
+        if node.attr.startswith('__') and node.attr not in SAFE_DUNDER:
+            raise SecurityError(f"Access to restricted attribute '{node.attr}' is blocked")
+        self.generic_visit(node)
+
+def verify_code_security(code: str) -> None:
+    try:
+        tree = ast.parse(code)
+    except Exception:
+        return
+    SecurityVisitor().visit(tree)
+
+SAFE_MODULES = {"math", "random", "time", "datetime", "string", "re", "json", "collections", "itertools", "functools", "bisect", "heapq"}
+
+def safe_import(name, globals=None, locals=None, fromlist=(), level=0):
+    root_module = name.split('.')[0]
+    if root_module in SAFE_MODULES:
+        return __import__(name, globals, locals, fromlist, level)
+    raise ImportError(f"Import of module '{name}' is restricted for security reasons")
+
+def get_safe_builtins() -> dict:
+    safe_b = dict(builtins.__dict__)
+    DANGEROUS_BUILTINS = [
+        'open', 'eval', 'exec', 'compile', 'globals', 'getattr', 'setattr',
+        'delattr', 'hasattr', 'dir', 'vars'
+    ]
+    for b in DANGEROUS_BUILTINS:
+        if b in safe_b:
+            del safe_b[b]
+    safe_b['__import__'] = safe_import
+    return safe_b
 
 MAX_STEPS = 500
 
@@ -96,6 +146,23 @@ _EXCLUDED_NAMES = {
     "__loader__", "__spec__", "__annotations__", "__file__",
     "__cached__", "__build_class__", "__return__",
 }
+
+
+def get_shallow_signature(v: Any) -> Any:
+    try:
+        t = type(v)
+        if t in (int, float, str, bool, type(None)):
+            return (t, v)
+        elif t is list or t is tuple:
+            return (t, id(v), len(v), tuple(id(x) for x in v[:20]))
+        elif t is dict:
+            return (t, id(v), len(v), tuple((k, id(val)) for k, val in list(v.items())[:20]))
+        elif t is set:
+            return (t, id(v), len(v), tuple(id(x) for x in list(v)[:20]))
+        else:
+            return (t, id(v), repr(v))
+    except Exception:
+        return (type(v), id(v))
 
 
 def get_user_vars(f_locals: Dict) -> Dict:
@@ -186,6 +253,7 @@ def execute_code(code: str, inputs: Optional[List[str]] = None) -> Dict:
     # locals_cache  : frame_id → last serialized locals dict.
     # Lets us skip get_user_vars() when the frame's locals haven't changed.
     locals_cache: Dict[int, Dict] = {}
+    locals_sig_cache: Dict[int, Dict] = {}
 
     # ── Helpers ───────────────────────────────────────────────────
 
@@ -240,12 +308,24 @@ def execute_code(code: str, inputs: Optional[List[str]] = None) -> Dict:
         """
         fid = id(frame)
         current_raw = frame.f_locals
-        # Build a shallow key from the raw locals dict identity + its length.
-        # If length or identity changes we must re-serialize; otherwise reuse.
-        cached = locals_cache.get(fid)
+        
+        # Build shallow signature of active user variables
+        sig = {}
+        for k, v in current_raw.items():
+            if k in _EXCLUDED_NAMES or k.startswith("__"):
+                continue
+            if callable(v) and not isinstance(
+                v, (int, float, str, bool, list, dict, tuple, set, type(None))
+            ):
+                continue
+            sig[k] = get_shallow_signature(v)
+            
+        cached_sig = locals_sig_cache.get(fid)
+        if cached_sig is not None and cached_sig == sig:
+            return locals_cache[fid]
+            
         fresh = get_user_vars(current_raw)
-        if cached is not None and cached == fresh:
-            return cached
+        locals_sig_cache[fid] = sig
         locals_cache[fid] = fresh
         return fresh
 
@@ -355,12 +435,19 @@ def execute_code(code: str, inputs: Optional[List[str]] = None) -> Dict:
     sys.stderr  = io.StringIO()
     error_info  = None
 
-    exec_globals = {"input": fake_input}
+    safe_builtins = get_safe_builtins()
+    safe_builtins['input'] = fake_input
+    exec_globals = {
+        "__builtins__": safe_builtins,
+    }
 
     try:
+        verify_code_security(code)
         compiled = compile(code, "<codevision>", "exec")
         sys.settrace(tracer)
         exec(compiled, exec_globals)  # noqa: S102
+    except SecurityError as e:
+        error_info = f"SecurityError: {str(e)}"
     except SyntaxError as e:
         error_info = f"SyntaxError on line {e.lineno}: {e.msg}"
     except RuntimeError as e:
@@ -378,20 +465,21 @@ def execute_code(code: str, inputs: Optional[List[str]] = None) -> Dict:
     # "call" and "return" steps are NEVER deduplicated — they carry distinct
     # educational meaning even when memory hasn't changed.
     #
-    # Uses a JSON hash string for O(1) comparison instead of Python dict ==
-    # which would be O(keys) per pair.
-    import json
+    # Comparing dictionary and reference directly is extremely fast and avoids
+    # slow JSON serialization on every step.
     unique: List[Dict] = []
-    prev_hash: str = ""
+    prev_step: Optional[Dict] = None
     for step in steps:
         if step["event"] not in ("call", "return", "exception"):
-            # Build a compact fingerprint for this step.
-            key = f"{step['line']}|{step['event']}|{step['scope']}|{json.dumps(step['memory'], sort_keys=True, default=str)}"
-            if unique and key == prev_hash:
+            if (prev_step is not None and
+                step["line"] == prev_step["line"] and
+                step["event"] == prev_step["event"] and
+                step["scope"] == prev_step["scope"] and
+                step["memory"] == prev_step["memory"]):
                 continue
-            prev_hash = key
+            prev_step = step
         else:
-            prev_hash = ""   # always allow call/return/exception through
+            prev_step = None   # always allow call/return/exception through
         unique.append(step)
 
     for i, s in enumerate(unique):
