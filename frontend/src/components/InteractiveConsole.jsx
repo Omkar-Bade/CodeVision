@@ -44,14 +44,21 @@ function lineClass(type) {
   }
 }
 
-export default function InteractiveConsole({ code, isActive }) {
+export default function InteractiveConsole({ code, isActive, onStep, onInputRequest, onReset }) {
   // ── State ──────────────────────────────────────────────────────────────────
-  // lines       — array of { id, type, text } for the console display
-  // status      — 'idle' | 'connecting' | 'running' | 'waiting_input' | 'done' | 'error'
-  // inputText   — current value of the inline input field
+  // lines          — array of { id, type, text, prompt, value } for the console display
+  // status         — 'idle' | 'connecting' | 'running' | 'waiting_input' | 'done' | 'error'
+  // inputText      — current value of the inline input field
+  // currentPrompt  — active prompt string from input(prompt)
+  // history        — list of previously submitted inputs
+  // historyIdx     — current index when navigating history with Up/Down keys
   const [lines, setLines] = useState([])
   const [status, setStatus] = useState('idle')
   const [inputText, setInputText] = useState('')
+  const [currentPrompt, setCurrentPrompt] = useState('')
+  const [history, setHistory] = useState([])
+  const [historyIdx, setHistoryIdx] = useState(-1)
+  const [copied, setCopied] = useState(false)
 
   // Refs for WebSocket, auto-scroll container, input field, and line ID counter
   const wsRef = useRef(null)
@@ -64,7 +71,7 @@ export default function InteractiveConsole({ code, isActive }) {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight
     }
-  }, [lines])
+  }, [lines, status, inputText])
 
   // ── Focus the input field when waiting for input ───────────────────────────
   useEffect(() => {
@@ -73,7 +80,7 @@ export default function InteractiveConsole({ code, isActive }) {
     }
   }, [status])
 
-  // ── Cleanup WebSocket on unmount or mode switch ────────────────────────────
+  // ── Cleanup WebSocket on unmount ───────────────────────────────────────────
   useEffect(() => {
     return () => {
       if (wsRef.current && wsRef.current.readyState <= 1) {
@@ -83,27 +90,29 @@ export default function InteractiveConsole({ code, isActive }) {
   }, [])
 
   // ── Helper: add a line to the console ──────────────────────────────────────
-  const addLine = useCallback((type, text) => {
+  const addLine = useCallback((lineObj) => {
     lineIdRef.current += 1
-    setLines(prev => [...prev, { id: lineIdRef.current, type, text }])
+    setLines(prev => [...prev, { id: lineIdRef.current, ...lineObj }])
   }, [])
 
   // ── Run handler — connect WS and send code ─────────────────────────────────
   const handleRun = useCallback(() => {
     if (!code.trim()) return
 
-    // Reset console
+    // Reset console & parent visualizer steps if callback provided
     setLines([])
     setStatus('connecting')
     setInputText('')
+    setCurrentPrompt('')
     lineIdRef.current = 0
+    if (onReset) onReset()
 
     const ws = new WebSocket(getWsUrl())
     wsRef.current = ws
 
     ws.onopen = () => {
       setStatus('running')
-      addLine('info', '▶ Execution started…')
+      addLine({ type: 'info', text: '▶ Interactive execution started…' })
       ws.send(JSON.stringify({ type: 'run', code }))
     }
 
@@ -117,33 +126,42 @@ export default function InteractiveConsole({ code, isActive }) {
 
       switch (msg.type) {
         case 'output':
-          // Split on newlines so each line renders separately (preserves multi-line prints)
           if (msg.text) {
             const parts = msg.text.split('\n')
-            // If the text ends with \n, the last element is '' — don't add an empty line
             parts.forEach((part, i) => {
-              if (i < parts.length - 1) {
-                addLine('output', part)
-              } else if (part) {
-                // Last segment without trailing newline — partial line
-                addLine('output', part)
+              // Add part if not the trailing empty string from a ending newline
+              if (i < parts.length - 1 || part) {
+                addLine({ type: 'output', text: part })
               }
             })
           }
           break
 
+        case 'step':
+          if (msg.step && onStep) {
+            onStep(msg.step)
+          }
+          break
+
         case 'input_request':
+          setCurrentPrompt(msg.prompt || '')
           setStatus('waiting_input')
+          if (msg.step && onStep) {
+            onStep(msg.step)
+          }
+          if (onInputRequest) {
+            onInputRequest(msg.prompt, msg.step)
+          }
           break
 
         case 'done':
-          addLine('info', '✓ Execution finished')
+          addLine({ type: 'info', text: '✔ Program finished successfully.' })
           setStatus('done')
           ws.close()
           break
 
         case 'error':
-          addLine('error', `✕ ${msg.message}`)
+          addLine({ type: 'error', text: `✕ ${msg.message}` })
           setStatus('error')
           ws.close()
           break
@@ -154,40 +172,88 @@ export default function InteractiveConsole({ code, isActive }) {
     }
 
     ws.onerror = () => {
-      addLine('error', '✕ WebSocket connection failed')
+      addLine({ type: 'error', text: '✕ WebSocket connection failed' })
       setStatus('error')
     }
 
     ws.onclose = () => {
       if (status !== 'done' && status !== 'error') {
-        // Only show disconnect if we didn't get a clean done/error
         setStatus(prev => (prev === 'running' || prev === 'waiting_input') ? 'error' : prev)
       }
     }
-  }, [code, addLine, status])
+  }, [code, addLine, status, onStep, onInputRequest, onReset])
 
   // ── Stop handler — close WebSocket mid-execution ───────────────────────────
   const handleStop = useCallback(() => {
     if (wsRef.current && wsRef.current.readyState <= 1) {
       wsRef.current.close()
     }
-    addLine('info', '⏹ Execution stopped')
+    addLine({ type: 'info', text: '⏹ Execution stopped' })
     setStatus('idle')
   }, [addLine])
 
   // ── Input submit handler — user presses Enter ──────────────────────────────
   const handleInputSubmit = useCallback((e) => {
-    e.preventDefault()
+    e?.preventDefault()
     if (!wsRef.current || wsRef.current.readyState !== 1) return
 
     const value = inputText
     wsRef.current.send(JSON.stringify({ type: 'input_response', value }))
 
-    // Echo the typed value into the console (like a real terminal)
-    addLine('input', value)
+    // Add to input history
+    setHistory(prev => [...prev, value])
+    setHistoryIdx(-1)
+
+    // Commit prompt + typed input as an authentic inline prompt entry
+    addLine({ type: 'prompt_input', prompt: currentPrompt, value })
     setInputText('')
+    setCurrentPrompt('')
     setStatus('running')
-  }, [inputText, addLine])
+  }, [inputText, currentPrompt, addLine])
+
+  // ── Keyboard Navigation (Up/Down for history, Ctrl+L clear, Ctrl+C stop) ───
+  const handleKeyDown = useCallback((e) => {
+    if (e.ctrlKey && e.key.toLowerCase() === 'l') {
+      e.preventDefault()
+      setLines([])
+      lineIdRef.current = 0
+      return
+    }
+
+    if (e.ctrlKey && e.key.toLowerCase() === 'c') {
+      e.preventDefault()
+      if (status === 'running' || status === 'waiting_input') {
+        handleStop()
+      }
+      return
+    }
+
+    if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      if (history.length === 0) return
+      setHistoryIdx(prev => {
+        const nextIdx = prev < history.length - 1 ? prev + 1 : prev
+        setInputText(history[history.length - 1 - nextIdx] ?? '')
+        return nextIdx
+      })
+      return
+    }
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      if (historyIdx <= 0) {
+        setHistoryIdx(-1)
+        setInputText('')
+        return
+      }
+      setHistoryIdx(prev => {
+        const nextIdx = prev - 1
+        setInputText(history[history.length - 1 - nextIdx] ?? '')
+        return nextIdx
+      })
+      return
+    }
+  }, [history, historyIdx, status, handleStop])
 
   // ── Clear console ──────────────────────────────────────────────────────────
   const handleClear = useCallback(() => {
@@ -195,41 +261,68 @@ export default function InteractiveConsole({ code, isActive }) {
     lineIdRef.current = 0
   }, [])
 
+  // ── Copy output to clipboard ───────────────────────────────────────────────
+  const handleCopy = useCallback(() => {
+    const textContent = lines.map(l => {
+      if (l.type === 'prompt_input') {
+        return `>>> ${l.prompt || ''}${l.value}`
+      }
+      return l.text ?? ''
+    }).join('\n')
+
+    navigator.clipboard.writeText(textContent).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }, [lines])
+
   const isConnected = status === 'running' || status === 'waiting_input'
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-[#0B1120] rounded-t-xl border border-[#1F2937] overflow-hidden">
 
       {/* ── Header / Controls ──────────────────────────────────────────────── */}
-      <div className="panel-header">
+      <div className="panel-header flex items-center justify-between px-4 py-2 bg-[#111827] border-b border-[#1F2937]">
         <div className="flex items-center gap-2">
-          <span className="font-mono text-[11px]">Interactive Console</span>
+          <span className="font-mono text-[11px] font-semibold text-gray-300">🖥️ Interactive Console</span>
           {/* Status indicator dot */}
-          <span className={`inline-block w-1.5 h-1.5 rounded-full ${
+          <span className={`inline-block w-2 h-2 rounded-full ${
             status === 'running'       ? 'bg-green-400 animate-pulse' :
             status === 'waiting_input' ? 'bg-yellow-400 animate-pulse' :
             status === 'error'         ? 'bg-red-400' :
             status === 'done'          ? 'bg-blue-400' :
                                          'bg-gray-600'
           }`} />
-          <span className="text-[10px] text-gray-500 font-mono">
+          <span className="text-[10px] text-gray-400 font-mono">
             {status === 'idle'          && 'Ready'}
             {status === 'connecting'    && 'Connecting…'}
-            {status === 'running'       && 'Running'}
+            {status === 'running'       && 'Executing…'}
             {status === 'waiting_input' && 'Waiting for input…'}
-            {status === 'done'          && 'Done'}
+            {status === 'done'          && 'Finished'}
             {status === 'error'         && 'Error'}
           </span>
         </div>
 
         <div className="flex items-center gap-1.5">
+          {/* Copy output button */}
+          <button
+            onClick={handleCopy}
+            disabled={lines.length === 0}
+            title="Copy console output"
+            className="px-2 py-0.5 text-[10px] font-mono text-gray-400 hover:text-white
+                       border border-[#374151] rounded transition-colors
+                       disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {copied ? '✓ Copied' : '📋 Copy'}
+          </button>
+
           {/* Clear button */}
           <button
             onClick={handleClear}
             disabled={isConnected}
-            title="Clear console"
-            className="px-2 py-0.5 text-[10px] font-mono text-gray-500 hover:text-white
+            title="Clear console (Ctrl+L)"
+            className="px-2 py-0.5 text-[10px] font-mono text-gray-400 hover:text-white
                        border border-[#374151] rounded transition-colors
                        disabled:opacity-40 disabled:cursor-not-allowed"
           >
@@ -263,57 +356,74 @@ export default function InteractiveConsole({ code, isActive }) {
       {/* ── Terminal output area ───────────────────────────────────────────── */}
       <div
         ref={scrollRef}
-        className="flex-1 overflow-y-auto bg-[#0B1120] px-4 py-3 font-mono text-sm
-                   scrollbar-thin scrollbar-thumb-gray-700"
+        className="flex-1 overflow-y-auto bg-[#0B1120] px-4 py-3 font-mono text-xs
+                   scrollbar-thin scrollbar-thumb-gray-700 select-text"
       >
         {lines.length === 0 && status === 'idle' && (
-          <div className="text-gray-600 text-xs leading-relaxed">
-            <p>Click <span className="text-green-400">▶ Run</span> to execute your code interactively.</p>
+          <div className="text-gray-500 text-xs leading-relaxed">
+            <p>Click <span className="text-green-400 font-semibold">▶ Run</span> to start interactive execution.</p>
             <p className="mt-1">
-              Every <code className="text-yellow-400/80">print()</code> output appears here in real time.
+              Every <code className="text-yellow-400/90">print()</code> output and <code className="text-yellow-400/90">input()</code> prompt streams here in real time.
             </p>
-            <p className="mt-1">
-              When your code calls <code className="text-yellow-400/80">input()</code>,
-              you'll be prompted to type your response right here — just like a real terminal.
+            <p className="mt-1 text-gray-600">
+              Shortcuts: <kbd className="px-1 py-0.5 bg-[#1F2937] rounded text-gray-400">Ctrl+L</kbd> Clear &middot; <kbd className="px-1 py-0.5 bg-[#1F2937] rounded text-gray-400">Ctrl+C</kbd> Interrupt &middot; <kbd className="px-1 py-0.5 bg-[#1F2937] rounded text-gray-400">↑/↓</kbd> History
             </p>
           </div>
         )}
 
-        <AnimatePresence initial={false}>
-          {lines.map((line) => (
-            <motion.div
-              key={line.id}
-              initial={{ opacity: 0, y: 4 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.1 }}
-              className={`whitespace-pre-wrap break-all leading-relaxed ${lineClass(line.type)}`}
-            >
-              {line.text}
-            </motion.div>
-          ))}
-        </AnimatePresence>
+        <div className="flex flex-col gap-0 font-mono text-xs leading-tight">
+          {lines.map((line) => {
+            if (line.type === 'info') {
+              return (
+                <div key={line.id} className="text-blue-400 font-semibold py-0.5">
+                  {line.text}
+                </div>
+              )
+            }
+            if (line.type === 'error') {
+              return (
+                <div key={line.id} className="text-red-400 whitespace-pre-wrap py-0.5">
+                  {line.text}
+                </div>
+              )
+            }
+            if (line.type === 'prompt_input') {
+              return (
+                <div key={line.id} className="flex items-center gap-0 whitespace-pre">
+                  <span className="text-yellow-400 font-bold shrink-0">{'>>> '}</span>
+                  {line.prompt && <span className="text-yellow-200/90 shrink-0">{line.prompt}</span>}
+                  <span className="text-cyan-300 font-semibold">{line.value}</span>
+                </div>
+              )
+            }
+            // Standard stdout output
+            return (
+              <div key={line.id} className="text-gray-200 whitespace-pre-wrap">
+                {line.text}
+              </div>
+            )
+          })}
 
-        {/* ── Inline input field (shown when waiting for input) ────────── */}
-        {status === 'waiting_input' && (
-          <motion.form
-            onSubmit={handleInputSubmit}
-            className="flex items-center gap-0 mt-0.5"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-          >
-            <span className="text-cyan-400 shrink-0">{'>'} </span>
-            <input
-              ref={inputRef}
-              type="text"
-              value={inputText}
-              onChange={e => setInputText(e.target.value)}
-              className="flex-1 bg-transparent text-cyan-300 outline-none caret-cyan-400
-                         font-mono text-sm placeholder-gray-600"
-              placeholder="Type your input and press Enter…"
-              autoFocus
-            />
-          </motion.form>
-        )}
+          {/* ── Active inline input field (shown when waiting for input) ────────── */}
+          {status === 'waiting_input' && (
+            <form onSubmit={handleInputSubmit} className="flex items-center gap-0 whitespace-pre">
+              <span className="text-yellow-400 font-bold shrink-0">{'>>> '}</span>
+              {currentPrompt && (
+                <span className="text-yellow-200/90 shrink-0">{currentPrompt}</span>
+              )}
+              <input
+                ref={inputRef}
+                type="text"
+                value={inputText}
+                onChange={e => setInputText(e.target.value)}
+                onKeyDown={handleKeyDown}
+                className="flex-1 bg-transparent text-cyan-300 font-semibold outline-none caret-cyan-400
+                           font-mono text-xs p-0 m-0 border-none focus:ring-0"
+                autoFocus
+              />
+            </form>
+          )}
+        </div>
       </div>
     </div>
   )

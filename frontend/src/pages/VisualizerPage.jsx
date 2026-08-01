@@ -31,10 +31,17 @@ import MemoryView from '../components/MemoryView'
 import InteractiveConsole from '../components/InteractiveConsole'
 
 
-// Speed slider maps 0–100 (slider position) to MAX_DELAY–MIN_DELAY ms (execution interval).
-// Slider left = slowest (2 s per step), slider right = fastest (80 ms per step).
-const MAX_DELAY = 2000   // ms — slowest execution speed
-const MIN_DELAY = 80     // ms — fastest execution speed
+// Predefined speed levels: multiplier → delay in ms.
+// 1x = 700 ms baseline.  Higher multiplier = shorter delay = faster execution.
+const SPEED_LEVELS = [
+  { label: '0.25x', delay: 2800 },
+  { label: '0.5x',  delay: 1400 },
+  { label: '1x',    delay: 700  },
+  { label: '2x',    delay: 350  },
+  { label: '4x',    delay: 175  },
+  { label: '8x',    delay: 88   },
+]
+const DEFAULT_SPEED_INDEX = 2  // 1x
 
 
 /* ─────────────────────────────────────────────────────────────────
@@ -86,7 +93,8 @@ export default function VisualizerPage() {
   const [currentStepIndex, setCurrentStepIndex] = useState(-1)
   const [isRunning, setIsRunning] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [speed, setSpeed] = useState(700)
+  const [speedIndex, setSpeedIndex] = useState(DEFAULT_SPEED_INDEX)
+  const speed = SPEED_LEVELS[speedIndex].delay
   const [output, setOutput] = useState('')
   const [error, setError] = useState(null)
   const [stale, setStale] = useState(false)
@@ -143,7 +151,8 @@ export default function VisualizerPage() {
   )
   const atStart = currentStepIndex <= 0
   const atEnd   = currentStepIndex >= steps.length - 1
-  const sliderVal = Math.round(((MAX_DELAY - speed) / (MAX_DELAY - MIN_DELAY)) * 100)
+  const atMinSpeed = speedIndex <= 0
+  const atMaxSpeed = speedIndex >= SPEED_LEVELS.length - 1
 
   // Mark steps stale whenever the editor content changes after a run.
   // This prompts the user to re-run before stepping.
@@ -152,10 +161,14 @@ export default function VisualizerPage() {
     if (steps.length > 0) setStale(true)
   }, [steps.length])
 
-  // Convert slider position (0–100) back to a delay in ms using a linear scale.
-  const handleSlider = useCallback((e) => {
-    const pct = Number(e.target.value)
-    setSpeed(Math.round(MAX_DELAY - (pct / 100) * (MAX_DELAY - MIN_DELAY)))
+  // Speed +/− handlers — change speed in real time without restarting execution.
+  // The auto-play useEffect already depends on `speed` (via speedIndex), so
+  // changing speedIndex instantly clears and re-creates the interval.
+  const handleSpeedUp = useCallback(() => {
+    setSpeedIndex(i => Math.min(i + 1, SPEED_LEVELS.length - 1))
+  }, [])
+  const handleSpeedDown = useCallback(() => {
+    setSpeedIndex(i => Math.max(i - 1, 0))
   }, [])
 
   // toolsOpen – controls visibility of the Tools dropdown
@@ -360,6 +373,31 @@ export default function VisualizerPage() {
     }
   }, [])
 
+  // ── Interactive step streaming handler ────────────────────────
+  // Receives step snapshots over WebSocket during interactive execution and
+  // updates steps + currentStepIndex in real time so MemoryView and
+  // ExecutionPanel highlight lines and display variables live!
+  const handleInteractiveStep = useCallback((stepData) => {
+    if (!stepData) return
+    setSteps(prev => {
+      const existingIdx = prev.findIndex(s => s.step === stepData.step)
+      let nextSteps
+      if (existingIdx >= 0) {
+        nextSteps = [...prev]
+        nextSteps[existingIdx] = stepData
+      } else {
+        nextSteps = [...prev, stepData]
+      }
+      setCurrentStepIndex(nextSteps.length - 1)
+      return nextSteps
+    })
+  }, [])
+
+  const handleInteractiveReset = useCallback(() => {
+    setSteps([])
+    setCurrentStepIndex(-1)
+  }, [])
+
   // ── Auto-play interval ───────────────────────────────────────
   // Advances one step every `speed` ms while isRunning is true.
   // Automatically stops when the last step is reached.
@@ -463,32 +501,7 @@ export default function VisualizerPage() {
                       </button>
                     </div>
 
-                    {/* Section 2: Language */}
-                    <div className="px-3 py-1.5">
-                      <div className="text-[10px] uppercase font-semibold text-gray-500 tracking-wider mb-1">Language</div>
-                      <div className="flex items-center justify-between px-2.5 py-1.5">
-                        <span className="flex items-center gap-2 text-gray-300">
-                          <span>🐍</span>
-                          <span>Language</span>
-                        </span>
-                        <select
-                          value={language}
-                          onChange={(e) => {
-                            setLanguage(e.target.value);
-                            setSteps([]);
-                            setCurrentStepIndex(-1);
-                            setOutput('');
-                            setToolsOpen(false);
-                          }}
-                          className="px-2 py-0.5 text-xs bg-[#0B1120] border border-[#374151] rounded-md
-                                     text-gray-300 font-mono focus:outline-none focus:border-blue-500 transition-colors cursor-pointer"
-                        >
-                          <option value="python">Python 3</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    {/* Section 3: Execution */}
+                    {/* Section 2: Execution */}
                     <div className="px-3 py-1.5">
                       <div className="text-[10px] uppercase font-semibold text-gray-500 tracking-wider mb-1">Execution</div>
                       <div className="space-y-0.5">
@@ -552,25 +565,25 @@ export default function VisualizerPage() {
               </AnimatePresence>
             </div>
 
+            {/* Input simulation field — always visible next to Tools */}
+            <div className="w-px h-4 bg-[#374151] shrink-0" />
+            <div className="flex items-center gap-1.5 shrink-0">
+              <span className="text-xs text-gray-400 font-mono whitespace-nowrap">⌨ Inputs:</span>
+              <input
+                type="text"
+                value={inputValues}
+                onChange={e => setInputValues(e.target.value)}
+                placeholder="e.g. Alice, 25, 3.14"
+                title="Comma-separated values fed to input() calls in order. Example: Alice, 25"
+                className="w-40 px-2 py-0.5 text-xs bg-[#0B1120] border border-[#374151]
+                           rounded-md text-gray-300 placeholder-gray-600
+                           focus:outline-none focus:border-blue-500 transition-colors font-mono"
+              />
+            </div>
+
             {/* ── Visualizer-only toolbar controls ─────────────────── */}
             {mode === 'visualizer' && (
               <>
-                <div className="w-px h-4 bg-[#374151] shrink-0" />
-
-                {/* Input simulation field — values fed to input() calls */}
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <span className="text-xs text-gray-400 font-mono whitespace-nowrap">⌨ Inputs:</span>
-                  <input
-                    type="text"
-                    value={inputValues}
-                    onChange={e => setInputValues(e.target.value)}
-                    placeholder="e.g. Alice, 25, 3.14"
-                    title="Comma-separated values fed to input() calls in order. Example: Alice, 25"
-                    className="w-40 px-2 py-0.5 text-xs bg-[#0B1120] border border-[#374151]
-                               rounded-md text-gray-300 placeholder-gray-600
-                               focus:outline-none focus:border-blue-500 transition-colors font-mono"
-                  />
-                </div>
 
                 {/* Stale warning — shown when code was edited after the last run */}
                 {stale && (
@@ -627,18 +640,34 @@ export default function VisualizerPage() {
 
                   <div className="w-px h-4 bg-[#374151]" />
 
-                  {/* Speed slider: left = slow (2 s), right = fast (80 ms) */}
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs text-gray-500" title="Slow">🐢</span>
-                    <input
-                      type="range" min={0} max={100} value={sliderVal}
-                      onChange={handleSlider}
-                      className="w-20" title="Execution speed"
-                    />
-                    <span className="text-xs text-gray-500" title="Fast">🐇</span>
-                    <span className="text-xs text-gray-400 font-mono w-12 text-right">
-                      {speed < 1000 ? `${speed}ms` : `${(speed / 1000).toFixed(1)}s`}
+                  {/* Compact speed controller: [-] 1.0x [+] */}
+                  <div className="flex items-center gap-1 shrink-0">
+                    <span className="text-xs text-gray-400 font-mono whitespace-nowrap">Speed:</span>
+                    <button
+                      onClick={handleSpeedDown}
+                      disabled={atMinSpeed}
+                      title="Decrease speed"
+                      className="inline-flex items-center justify-center w-5 h-5 rounded
+                                 text-xs font-bold text-gray-300 bg-[#0B1120] border border-[#374151]
+                                 hover:bg-[#1F2937] hover:text-white transition-colors
+                                 disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      −
+                    </button>
+                    <span className="text-xs text-blue-400 font-mono font-semibold w-10 text-center select-none">
+                      {SPEED_LEVELS[speedIndex].label}
                     </span>
+                    <button
+                      onClick={handleSpeedUp}
+                      disabled={atMaxSpeed}
+                      title="Increase speed"
+                      className="inline-flex items-center justify-center w-5 h-5 rounded
+                                 text-xs font-bold text-gray-300 bg-[#0B1120] border border-[#374151]
+                                 hover:bg-[#1F2937] hover:text-white transition-colors
+                                 disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      +
+                    </button>
                   </div>
 
 
@@ -719,37 +748,72 @@ export default function VisualizerPage() {
               </Panel>
             </PanelGroup>
           ) : (
-            /* ── Interactive Console layout ─────────────────────── */
-            <PanelGroup
-              key={editorVisible ? 'interactive-editor' : 'interactive-only'}
-              orientation="horizontal"
-              className="h-full"
-            >
-              {/* Monaco Editor — same toggle as visualizer mode */}
-              <AnimatePresence initial={false}>
-                {editorVisible && (
-                  <>
-                    <Panel defaultSize={40} minSize={15} className="flex flex-col">
-                      <motion.div
-                        className="glass-panel h-full overflow-hidden"
-                        initial={{ opacity: 0, scaleX: 0.96 }}
-                        animate={{ opacity: 1, scaleX: 1 }}
-                        exit={{ opacity: 0, scaleX: 0.96 }}
-                        transition={{ duration: 0.16 }}
-                        style={{ transformOrigin: 'left' }}
-                      >
-                        <CodeEditor code={code} onChange={handleCodeChange} language={language} />
-                      </motion.div>
-                    </Panel>
-                    <PanelResizeHandle className="resize-handle-x" />
-                  </>
-                )}
-              </AnimatePresence>
+            /* ── Interactive Mode layout: 3 visualizer panels on top + full-width terminal on bottom ── */
+            <PanelGroup orientation="vertical" className="h-full" key="interactive-vertical-layout">
+              {/* Top Section: Code Editor | Execution Viewer | Memory Visualization */}
+              <Panel defaultSize={65} minSize={30} className="flex flex-col">
+                <PanelGroup
+                  key={editorVisible ? 'interactive-top-with-editor' : 'interactive-top-no-editor'}
+                  orientation="horizontal"
+                  className="h-full"
+                >
+                  <AnimatePresence initial={false}>
+                    {editorVisible && (
+                      <>
+                        <Panel defaultSize={hSizes.editor} minSize={15} className="flex flex-col">
+                          <motion.div
+                            className="glass-panel h-full overflow-hidden"
+                            initial={{ opacity: 0, scaleX: 0.96 }}
+                            animate={{ opacity: 1, scaleX: 1 }}
+                            exit={{ opacity: 0, scaleX: 0.96 }}
+                            transition={{ duration: 0.16 }}
+                            style={{ transformOrigin: 'left' }}
+                          >
+                            <CodeEditor code={code} onChange={handleCodeChange} language={language} />
+                          </motion.div>
+                        </Panel>
+                        <PanelResizeHandle className="resize-handle-x" />
+                      </>
+                    )}
+                  </AnimatePresence>
 
-              {/* Interactive Console — fills the remaining space */}
-              <Panel defaultSize={editorVisible ? 60 : 100} minSize={30} className="flex flex-col">
+                  <Panel defaultSize={hSizes.exec} minSize={20} className="flex flex-col">
+                    <div className="glass-panel h-full overflow-hidden">
+                      <ExecutionPanel
+                        code={code}
+                        steps={steps}
+                        currentStepIndex={Math.max(0, currentStepIndex)}
+                      />
+                    </div>
+                  </Panel>
+
+                  <PanelResizeHandle className="resize-handle-x" />
+
+                  <Panel defaultSize={hSizes.mem} minSize={20} className="flex flex-col">
+                    <div className="glass-panel h-full overflow-hidden">
+                      <MemoryView
+                        memory={currentMemory}
+                        prevMemory={prevMemory}
+                        callStack={callStack}
+                        scope={currentScope}
+                      />
+                    </div>
+                  </Panel>
+                </PanelGroup>
+              </Panel>
+
+              {/* Vertical resize divider handle */}
+              <PanelResizeHandle className="resize-handle-y" />
+
+              {/* Bottom Section: Full-width Interactive Console */}
+              <Panel defaultSize={35} minSize={20} className="flex flex-col">
                 <div className="glass-panel h-full overflow-hidden">
-                  <InteractiveConsole code={code} isActive={mode === 'interactive'} />
+                  <InteractiveConsole
+                    code={code}
+                    isActive={mode === 'interactive'}
+                    onStep={handleInteractiveStep}
+                    onReset={handleInteractiveReset}
+                  />
                 </div>
               </Panel>
             </PanelGroup>

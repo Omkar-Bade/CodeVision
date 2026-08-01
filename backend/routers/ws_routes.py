@@ -113,18 +113,129 @@ async def ws_execute(ws: WebSocket):
 
         streaming_stdout = _StreamingStdout(send_queue, loop)
 
+        # ── Step tracing state ──────────────────────────────────────────
+        from executor import (
+            verify_code_security, get_safe_builtins, SecurityError,
+            get_user_vars, detect_annotations, MAX_STEPS
+        )
+
+        code_lines = code.split("\n")
+        precomputed_annotations = {
+            lineno: detect_annotations(line)
+            for lineno, line in enumerate(code_lines, start=1)
+        }
+
+        frame_pending = {}
+        frame_names = {}
+        call_stack = []
+        step_counter = [0]
+        last_step_ref = [{}]
+
+        def line_text(lineno: int) -> str:
+            if 0 < lineno <= len(code_lines):
+                return code_lines[lineno - 1].strip()
+            return ""
+
+        def stack_snapshot():
+            return [{"name": f["name"], "locals": dict(f["locals"])} for f in call_stack]
+
+        def emit_step(frame, lineno: int, event: str, extra_ann=None):
+            if step_counter[0] >= MAX_STEPS:
+                return
+            step_counter[0] += 1
+            lc = line_text(lineno)
+            scope = frame_names.get(id(frame), "global")
+            line_ann = precomputed_annotations.get(lineno, [])
+            all_ann = (extra_ann or []) + line_ann
+            user_vars = get_user_vars(frame.f_locals)
+
+            step_data = {
+                "step":        step_counter[0],
+                "line":        lineno,
+                "code":        lc,
+                "memory":      user_vars,
+                "event":       event,
+                "scope":       scope,
+                "call_stack":  stack_snapshot(),
+                "annotations": all_ann,
+            }
+            last_step_ref[0] = step_data
+            loop.call_soon_threadsafe(
+                send_queue.put_nowait,
+                {"type": "step", "step": step_data},
+            )
+
+        def flush_pending(frame):
+            fid = id(frame)
+            if fid in frame_pending:
+                ln = frame_pending.pop(fid)
+                emit_step(frame, ln, "line")
+
+        def ws_tracer(frame, event, arg):
+            if frame.f_code.co_filename != "<codevision>":
+                return ws_tracer
+
+            if step_counter[0] >= MAX_STEPS:
+                raise RuntimeError(f"Execution exceeded {MAX_STEPS} steps.")
+
+            fid = id(frame)
+            lineno = frame.f_lineno
+            func_name = frame.f_code.co_name
+
+            if event == "call":
+                if func_name == "<module>":
+                    frame_names[fid] = "global"
+                else:
+                    frame_names[fid] = func_name
+                    call_stack.append({"name": func_name, "locals": {}})
+                    emit_step(frame, lineno, "call", [
+                        {"type": "call", "detail": f"Calling {func_name}()"}
+                    ])
+                return ws_tracer
+
+            if event == "line":
+                scope = frame_names.get(fid, "global")
+                if call_stack and scope != "global":
+                    call_stack[-1]["locals"] = get_user_vars(frame.f_locals)
+                flush_pending(frame)
+                frame_pending[fid] = lineno
+                return ws_tracer
+
+            if event == "return":
+                scope = frame_names.get(fid, "global")
+                if call_stack and scope != "global":
+                    call_stack[-1]["locals"] = get_user_vars(frame.f_locals)
+                flush_pending(frame)
+                if scope not in ("global", "<module>"):
+                    ret_str = repr(arg) if arg is not None else "None"
+                    emit_step(frame, lineno, "return", [
+                        {"type": "return", "detail": f"{scope}() returned {ret_str}"}
+                    ])
+                    if call_stack:
+                        call_stack.pop()
+                return ws_tracer
+
+            if event == "exception":
+                exc_msg = str(arg[1]) if arg else "Unknown error"
+                emit_step(frame, lineno, "exception", [
+                    {"type": "exception", "detail": exc_msg}
+                ])
+                return ws_tracer
+
+            return ws_tracer
+
         # ── Custom input() replacement ───────────────────────────────────
         def _interactive_input(prompt: str = "") -> str:
             if cancelled.is_set():
                 raise SystemExit("Execution cancelled")
 
-            # Send the prompt to stdout (like real Python) and request input
-            if prompt:
-                streaming_stdout.write(prompt)
-
             loop.call_soon_threadsafe(
                 send_queue.put_nowait,
-                {"type": "input_request", "prompt": prompt},
+                {
+                    "type": "input_request",
+                    "prompt": prompt,
+                    "step": last_step_ref[0],
+                },
             )
 
             # Block until the client sends a response (or cancel / timeout)
@@ -142,7 +253,6 @@ async def ws_execute(ws: WebSocket):
             sys.stdout = streaming_stdout
             sys.stderr = streaming_stdout
 
-            from executor import verify_code_security, get_safe_builtins, SecurityError
             verify_code_security(code)
 
             safe_builtins = get_safe_builtins()
@@ -152,13 +262,8 @@ async def ws_execute(ws: WebSocket):
             }
 
             compiled = compile(code, "<codevision>", "exec")
+            sys.settrace(ws_tracer)
             exec(compiled, exec_globals)  # noqa: S102
-
-            # Success
-            loop.call_soon_threadsafe(
-                send_queue.put_nowait,
-                {"type": "done"},
-            )
         except SecurityError as e:
             loop.call_soon_threadsafe(
                 send_queue.put_nowait,
@@ -182,6 +287,7 @@ async def ws_execute(ws: WebSocket):
                 {"type": "error", "message": traceback.format_exc()},
             )
         finally:
+            sys.settrace(None)
             sys.stdout = old_stdout
             sys.stderr = old_stderr
             # Poison pill to stop the sender task
