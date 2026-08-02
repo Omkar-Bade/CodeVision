@@ -16,6 +16,29 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import {
+  RotateCcw,
+  SkipBack,
+  Play,
+  Pause,
+  SkipForward,
+  Minus,
+  Plus,
+  Wrench,
+  ChevronDown,
+  Layout,
+  ListOrdered,
+  Terminal,
+  Save,
+  FolderOpen,
+  Keyboard,
+  Settings,
+  Palette,
+  Download,
+  Upload,
+  Loader2,
+  Check,
+} from 'lucide-react'
 import api from '../api'
 import { useAuth } from '../context/AuthContext'
 
@@ -45,15 +68,13 @@ const DEFAULT_SPEED_INDEX = 2  // 1x
 
 
 /* ─────────────────────────────────────────────────────────────────
-   TBtn — compact toolbar button used for playback controls.
-   Accepts three visual variants: 'primary' (run/pause), 'danger'
-   (restart), and 'muted' (step navigation).
+   IconButton — clean IDE icon button with hover animations & tooltips
 ───────────────────────────────────────────────────────────────── */
-function TBtn({ onClick, disabled, title, variant = 'muted', children }) {
+function IconButton({ onClick, disabled, title, variant = 'muted', children }) {
   const cls = {
-    primary: 'bg-blue-600 text-white border-blue-500 hover:bg-blue-500',
-    danger: 'bg-transparent text-red-400 border-red-800 hover:bg-red-900/30',
-    muted: 'bg-transparent text-gray-300 border-[#374151] hover:bg-[#1F2937] hover:text-white',
+    primary: 'bg-blue-600 border-blue-500 text-white hover:bg-blue-500 hover:shadow-[0_0_14px_rgba(59,130,246,0.4)] active:bg-blue-700',
+    danger: 'bg-transparent border-[#2A3446] text-red-400 hover:bg-red-950/40 hover:border-red-700/60 hover:text-red-300 active:bg-red-950/60',
+    muted: 'bg-transparent border-[#2A3446] text-gray-300 hover:bg-[#1E2638] hover:border-[#38465E] hover:text-white active:bg-[#253046]',
   }[variant]
 
   return (
@@ -61,9 +82,10 @@ function TBtn({ onClick, disabled, title, variant = 'muted', children }) {
       onClick={onClick}
       disabled={disabled}
       title={title}
-      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-mono
-                  font-medium border transition-colors duration-150 outline-none
-                  disabled:opacity-40 disabled:cursor-not-allowed ${cls}`}
+      className={`w-8 h-8 rounded-lg flex items-center justify-center border
+                  transition-all duration-150 outline-none cursor-pointer select-none
+                  disabled:opacity-35 disabled:cursor-not-allowed disabled:hover:scale-100
+                  hover:scale-105 active:scale-95 ${cls}`}
     >
       {children}
     </button>
@@ -119,6 +141,7 @@ export default function VisualizerPage() {
 
   // savedCodes modal state
   const [showCodesModal, setShowCodesModal] = useState(false)
+  const [showShortcutsModal, setShowShortcutsModal] = useState(false)
   const [savedCodes, setSavedCodes]         = useState([])
   const [codesLoading, setCodesLoading]     = useState(false)
 
@@ -447,25 +470,20 @@ export default function VisualizerPage() {
         <div className="sticky top-16 z-40 bg-[#0E131F] border-b border-[#1E2638] px-4 py-2 shrink-0">
           <div className="flex items-center gap-2 flex-wrap min-h-[2.25rem]">
 
-            {/* 🛠️ Tools Dropdown — consolidates Editor, Language, Execution, and File actions */}
+            {/* 🛠️ Tools Dropdown — consolidates Editor, Execution, Files, and System Options */}
             <div className="relative shrink-0" ref={toolsDropdownRef}>
               <button
                 onClick={() => setToolsOpen(v => !v)}
-                title="Tools"
-                className={`flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md border
-                            font-mono transition-colors duration-150 shrink-0
+                title="Tools Menu"
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border
+                            font-mono font-medium transition-all duration-150 shrink-0 select-none
                             ${toolsOpen
-                    ? 'bg-blue-600/15 border-blue-600/40 text-blue-400'
-                    : 'bg-[#0B0B0D] border-[#2A3446] text-gray-300 hover:text-white hover:bg-[#1E2638]'}`}
+                    ? 'bg-blue-600/20 border-blue-500/50 text-blue-400 shadow-[0_0_12px_rgba(59,130,246,0.2)]'
+                    : 'bg-[#0B0B0D] border-[#2A3446] text-gray-300 hover:text-white hover:bg-[#1E2638] hover:border-[#38465E]'}`}
               >
-                <span>🛠️ Tools</span>
-                <svg
-                  className={`w-3 h-3 text-gray-400 transition-transform duration-150 ${toolsOpen ? 'rotate-180' : ''}`}
-                  viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-                  strokeLinecap="round" strokeLinejoin="round"
-                >
-                  <polyline points="6 9 12 15 18 9" />
-                </svg>
+                <Wrench className="w-3.5 h-3.5 text-blue-400" />
+                <span>Tools</span>
+                <ChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform duration-150 ${toolsOpen ? 'rotate-180' : ''}`} />
               </button>
 
               {/* Dropdown Menu */}
@@ -476,26 +494,23 @@ export default function VisualizerPage() {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 6, scale: 0.98 }}
                     transition={{ duration: 0.12 }}
-                    className="absolute left-0 mt-1.5 w-60 bg-[#0E131F] border border-[#1E2638]
+                    className="absolute left-0 mt-1.5 w-64 bg-[#0E131F] border border-[#1E2638]
                                rounded-xl shadow-2xl z-50 overflow-hidden font-mono text-xs py-1.5
                                divide-y divide-[#1E2638]"
                   >
                     {/* Section 1: Editor */}
                     <div className="px-3 py-1.5">
-                      <div className="text-[10px] uppercase font-semibold text-gray-500 tracking-wider mb-1">Editor</div>
+                      <div className="text-[10px] uppercase font-semibold text-gray-400 tracking-wider mb-1">Editor</div>
                       <button
                         onClick={() => { setEditorVisible(v => !v); setToolsOpen(false); }}
                         className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-md
-                                   text-gray-300 hover:text-white hover:bg-[#1F2937] transition-colors"
+                                   text-gray-300 hover:text-white hover:bg-[#1E2638] transition-colors"
                       >
                         <span className="flex items-center gap-2">
-                          <svg className="w-3.5 h-3.5 text-gray-400" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" />
-                          </svg>
+                          <Layout className="w-3.5 h-3.5 text-gray-400" />
                           <span>{editorVisible ? 'Hide Editor' : 'Show Editor'}</span>
                         </span>
-                        <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono ${editorVisible ? 'bg-blue-600/20 text-blue-400' : 'bg-gray-800 text-gray-500'}`}>
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono ${editorVisible ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30' : 'bg-gray-800 text-gray-500'}`}>
                           {editorVisible ? 'ON' : 'OFF'}
                         </span>
                       </button>
@@ -503,42 +518,42 @@ export default function VisualizerPage() {
 
                     {/* Section 2: Execution */}
                     <div className="px-3 py-1.5">
-                      <div className="text-[10px] uppercase font-semibold text-gray-500 tracking-wider mb-1">Execution</div>
+                      <div className="text-[10px] uppercase font-semibold text-gray-400 tracking-wider mb-1">Execution</div>
                       <div className="space-y-0.5">
                         <button
                           onClick={() => { setMode('visualizer'); setToolsOpen(false); }}
-                          className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-md transition-colors ${mode === 'visualizer' ? 'bg-blue-600/20 text-blue-400 font-medium' : 'text-gray-300 hover:text-white hover:bg-[#1F2937]'}`}
+                          className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-md transition-colors ${mode === 'visualizer' ? 'bg-blue-600/20 text-blue-400 font-medium' : 'text-gray-300 hover:text-white hover:bg-[#1E2638]'}`}
                         >
                           <span className="flex items-center gap-2">
-                            <span>🔍</span>
+                            <ListOrdered className="w-3.5 h-3.5 text-blue-400" />
                             <span>Step-by-step</span>
                           </span>
-                          {mode === 'visualizer' && <span className="text-blue-400 font-bold">✓</span>}
+                          {mode === 'visualizer' && <Check className="w-3.5 h-3.5 text-blue-400 font-bold" />}
                         </button>
                         <button
                           onClick={() => { setMode('interactive'); setToolsOpen(false); }}
-                          className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-md transition-colors ${mode === 'interactive' ? 'bg-green-600/20 text-green-400 font-medium' : 'text-gray-300 hover:text-white hover:bg-[#1F2937]'}`}
+                          className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-md transition-colors ${mode === 'interactive' ? 'bg-green-600/20 text-green-400 font-medium' : 'text-gray-300 hover:text-white hover:bg-[#1E2638]'}`}
                         >
                           <span className="flex items-center gap-2">
-                            <span>⌨</span>
+                            <Terminal className="w-3.5 h-3.5 text-green-400" />
                             <span>Interactive</span>
                           </span>
-                          {mode === 'interactive' && <span className="text-green-400 font-bold">✓</span>}
+                          {mode === 'interactive' && <Check className="w-3.5 h-3.5 text-green-400 font-bold" />}
                         </button>
                       </div>
                     </div>
 
-                    {/* Section 4: Files */}
+                    {/* Section 3: Files */}
                     <div className="px-3 py-1.5">
-                      <div className="text-[10px] uppercase font-semibold text-gray-500 tracking-wider mb-1">Files</div>
+                      <div className="text-[10px] uppercase font-semibold text-gray-400 tracking-wider mb-1">Files</div>
                       <div className="space-y-0.5">
                         <button
                           onClick={() => { setToolsOpen(false); handleSaveCode(); }}
                           disabled={!user || saveStatus === 'saving'}
-                          className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-md text-gray-300 hover:text-white hover:bg-[#1F2937] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-md text-gray-300 hover:text-white hover:bg-[#1E2638] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <span className="flex items-center gap-2">
-                            <span>💾</span>
+                            <Save className="w-3.5 h-3.5 text-blue-400" />
                             <span>
                               {saveStatus === 'saving' ? 'Saving…'
                                 : saveStatus === 'saved' ? 'Saved!'
@@ -546,18 +561,78 @@ export default function VisualizerPage() {
                                     : 'Save Code'}
                             </span>
                           </span>
-                          {saveStatus === 'saved' && <span className="text-green-400 font-bold">✓</span>}
+                          {saveStatus === 'saved' && <Check className="w-3.5 h-3.5 text-green-400 font-bold" />}
                         </button>
 
                         {user && (
                           <button
                             onClick={() => { setToolsOpen(false); setShowCodesModal(true); fetchSavedCodes(); }}
-                            className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-gray-300 hover:text-white hover:bg-[#1F2937] transition-colors"
+                            className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-gray-300 hover:text-white hover:bg-[#1E2638] transition-colors"
                           >
-                            <span>📂</span>
+                            <FolderOpen className="w-3.5 h-3.5 text-yellow-400" />
                             <span>My Codes</span>
                           </button>
                         )}
+                      </div>
+                    </div>
+
+                    {/* Section 4: Other / Future Options */}
+                    <div className="px-3 py-1.5">
+                      <div className="text-[10px] uppercase font-semibold text-gray-400 tracking-wider mb-1">Options</div>
+                      <div className="space-y-0.5">
+                        <button
+                          onClick={() => { setShowShortcutsModal(true); setToolsOpen(false); }}
+                          className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-md text-gray-300 hover:text-white hover:bg-[#1E2638] transition-colors"
+                        >
+                          <span className="flex items-center gap-2">
+                            <Keyboard className="w-3.5 h-3.5 text-purple-400" />
+                            <span>Keyboard Shortcuts</span>
+                          </span>
+                        </button>
+                        <button
+                          disabled
+                          title="Coming Soon"
+                          className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-md text-gray-500 opacity-60 cursor-not-allowed"
+                        >
+                          <span className="flex items-center gap-2">
+                            <Settings className="w-3.5 h-3.5 text-gray-500" />
+                            <span>Settings</span>
+                          </span>
+                          <span className="text-[9px] text-gray-600 uppercase font-mono">Soon</span>
+                        </button>
+                        <button
+                          disabled
+                          title="Coming Soon"
+                          className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-md text-gray-500 opacity-60 cursor-not-allowed"
+                        >
+                          <span className="flex items-center gap-2">
+                            <Palette className="w-3.5 h-3.5 text-gray-500" />
+                            <span>Themes</span>
+                          </span>
+                          <span className="text-[9px] text-gray-600 uppercase font-mono">Soon</span>
+                        </button>
+                        <button
+                          disabled
+                          title="Coming Soon"
+                          className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-md text-gray-500 opacity-60 cursor-not-allowed"
+                        >
+                          <span className="flex items-center gap-2">
+                            <Download className="w-3.5 h-3.5 text-gray-500" />
+                            <span>Export Code</span>
+                          </span>
+                          <span className="text-[9px] text-gray-600 uppercase font-mono">Soon</span>
+                        </button>
+                        <button
+                          disabled
+                          title="Coming Soon"
+                          className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-md text-gray-500 opacity-60 cursor-not-allowed"
+                        >
+                          <span className="flex items-center gap-2">
+                            <Upload className="w-3.5 h-3.5 text-gray-500" />
+                            <span>Import Code</span>
+                          </span>
+                          <span className="text-[9px] text-gray-600 uppercase font-mono">Soon</span>
+                        </button>
                       </div>
                     </div>
                   </motion.div>
@@ -588,71 +663,71 @@ export default function VisualizerPage() {
                 {/* Stale warning — shown when code was edited after the last run */}
                 {stale && (
                   <motion.span
-                    className="text-xs text-vs-yellow font-mono"
+                    className="text-xs text-vs-yellow font-mono ml-2"
                     initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                   >
                     ⚠ Code changed — click Run
                   </motion.span>
                 )}
 
-                {/* ── Playback Controls (right-aligned) ─────────────
-                    All execution buttons live here so the user never
-                    needs to scroll down to control playback.
+                {/* ── Playback Controls (right-aligned, icon-only) ─────────────
+                    All execution buttons live here with tooltips for access.
                 ─────────────────────────────────────────────────── */}
-                <div className="ml-auto flex items-center gap-1.5 shrink-0">
+                <div className="ml-auto flex items-center gap-2 shrink-0">
 
-                  {/* Reset clears all steps and execution state */}
-                  <TBtn onClick={handleReset} variant="danger" title="Restart (Ctrl+R)">
-                    🔁 Restart
-                  </TBtn>
+                  {/* Reset / Restart */}
+                  <IconButton onClick={handleReset} variant="danger" title="Restart (Ctrl+R)">
+                    <RotateCcw className="w-4 h-4" />
+                  </IconButton>
 
-                  <div className="w-px h-4 bg-[#374151]" />
-
-                  {/* Step backward through execution history */}
-                  <TBtn
+                  {/* Step Back */}
+                  <IconButton
                     onClick={handlePrev}
                     disabled={atStart || steps.length === 0}
                     title="Step Back (←)"
                   >
-                    ⏮ Step Back
-                  </TBtn>
+                    <SkipBack className="w-4 h-4" />
+                  </IconButton>
 
-                  {/* Run/Pause — single button that toggles based on isRunning */}
+                  {/* Run / Pause toggle */}
                   {isRunning ? (
-                    <TBtn onClick={handlePause} variant="primary" title="Pause (Space)">
-                      ⏸ Pause
-                    </TBtn>
+                    <IconButton onClick={handlePause} variant="primary" title="Pause (Space)">
+                      <Pause className="w-4 h-4" />
+                    </IconButton>
                   ) : (
-                    <TBtn onClick={handleRun} disabled={isLoading} variant="primary"
+                    <IconButton onClick={handleRun} disabled={isLoading} variant="primary"
                       title="Run / Resume (Space)">
-                      {isLoading ? '⏳ Running…' : '▶ Run'}
-                    </TBtn>
+                      {isLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Play className="w-4 h-4 fill-current ml-0.5" />
+                      )}
+                    </IconButton>
                   )}
 
-                  {/* Step forward through execution history */}
-                  <TBtn
+                  {/* Next Step */}
+                  <IconButton
                     onClick={handleNext}
                     disabled={atEnd || steps.length === 0}
                     title="Next Step (→)"
                   >
-                    ⏭ Step
-                  </TBtn>
+                    <SkipForward className="w-4 h-4" />
+                  </IconButton>
 
-                  <div className="w-px h-4 bg-[#374151]" />
+                  <div className="w-px h-4 bg-[#2A3446] mx-1" />
 
-                  {/* Compact speed controller: [-] 1.0x [+] */}
-                  <div className="flex items-center gap-1 shrink-0">
-                    <span className="text-xs text-gray-400 font-mono whitespace-nowrap">Speed:</span>
+                  {/* Compact Speed Controller: [-] 1.0x [+] */}
+                  <div className="flex items-center gap-1.5 shrink-0 bg-[#0B0B0D] border border-[#2A3446] px-2 py-1 rounded-lg">
+                    <span className="text-xs text-gray-400 font-mono select-none">Speed</span>
                     <button
                       onClick={handleSpeedDown}
                       disabled={atMinSpeed}
                       title="Decrease speed"
-                      className="inline-flex items-center justify-center w-5 h-5 rounded
-                                 text-xs font-bold text-gray-300 bg-[#0B0B0D] border border-[#2A3446]
-                                 hover:bg-[#1E2638] hover:text-white transition-colors
-                                 disabled:opacity-30 disabled:cursor-not-allowed"
+                      className="w-5 h-5 rounded flex items-center justify-center
+                                 text-gray-300 hover:bg-[#1E2638] hover:text-white transition-colors
+                                 disabled:opacity-30 disabled:cursor-not-allowed active:scale-95"
                     >
-                      −
+                      <Minus className="w-3.5 h-3.5" />
                     </button>
                     <span className="text-xs text-blue-400 font-mono font-semibold w-10 text-center select-none">
                       {SPEED_LEVELS[speedIndex].label}
@@ -661,15 +736,13 @@ export default function VisualizerPage() {
                       onClick={handleSpeedUp}
                       disabled={atMaxSpeed}
                       title="Increase speed"
-                      className="inline-flex items-center justify-center w-5 h-5 rounded
-                                 text-xs font-bold text-gray-300 bg-[#0B0B0D] border border-[#2A3446]
-                                 hover:bg-[#1E2638] hover:text-white transition-colors
-                                 disabled:opacity-30 disabled:cursor-not-allowed"
+                      className="w-5 h-5 rounded flex items-center justify-center
+                                 text-gray-300 hover:bg-[#1E2638] hover:text-white transition-colors
+                                 disabled:opacity-30 disabled:cursor-not-allowed active:scale-95"
                     >
-                      +
+                      <Plus className="w-3.5 h-3.5" />
                     </button>
                   </div>
-
 
                 </div>
               </>
@@ -1069,6 +1142,70 @@ export default function VisualizerPage() {
                              rounded-lg hover:bg-blue-500 transition-colors"
                 >
                   Save
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Keyboard Shortcuts Modal ──────────────────────────────────── */}
+      <AnimatePresence>
+        {showShortcutsModal && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowShortcutsModal(false)}
+          >
+            <motion.div
+              className="w-full max-w-sm bg-[#0E131F] border border-[#1E2638] rounded-xl shadow-2xl overflow-hidden font-mono"
+              initial={{ opacity: 0, scale: 0.95, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 12 }}
+              transition={{ duration: 0.15 }}
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#1E2638]">
+                <span className="text-white font-semibold text-sm flex items-center gap-2">
+                  <Keyboard className="w-4 h-4 text-purple-400" />
+                  <span>Keyboard Shortcuts</span>
+                </span>
+                <button
+                  onClick={() => setShowShortcutsModal(false)}
+                  className="text-gray-400 hover:text-white text-xs px-2 py-1 rounded hover:bg-[#1E2638] transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="px-5 py-4 space-y-3 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-300">Play / Pause</span>
+                  <kbd className="px-2.5 py-1 bg-[#0B0B0D] border border-[#2A3446] rounded-md text-blue-400 font-bold shadow-sm">Space</kbd>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-300">Next Step</span>
+                  <kbd className="px-2.5 py-1 bg-[#0B0B0D] border border-[#2A3446] rounded-md text-blue-400 font-bold shadow-sm">→</kbd>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-300">Step Backward</span>
+                  <kbd className="px-2.5 py-1 bg-[#0B0B0D] border border-[#2A3446] rounded-md text-blue-400 font-bold shadow-sm">←</kbd>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-300">Restart Execution</span>
+                  <kbd className="px-2.5 py-1 bg-[#0B0B0D] border border-[#2A3446] rounded-md text-blue-400 font-bold shadow-sm">Ctrl + R</kbd>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end px-5 py-3 border-t border-[#1E2638] bg-[#0E131F]">
+                <button
+                  onClick={() => setShowShortcutsModal(false)}
+                  className="px-3.5 py-1.5 text-xs font-mono text-white bg-blue-600 border border-blue-500
+                             rounded-lg hover:bg-blue-500 transition-colors"
+                >
+                  Done
                 </button>
               </div>
             </motion.div>
