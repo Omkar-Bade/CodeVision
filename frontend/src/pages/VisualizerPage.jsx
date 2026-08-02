@@ -291,8 +291,27 @@ export default function VisualizerPage() {
     }
   }
 
+  // interactiveConsoleRef – imperative ref to InteractiveConsole
+  const interactiveConsoleRef = useRef(null)
+  const [interactiveStatus, setInteractiveStatus] = useState('idle')
+
+  const handleInteractiveStatusChange = useCallback((status) => {
+    setInteractiveStatus(status)
+  }, [])
+
+  const isInteractiveRunning = interactiveStatus === 'running' || interactiveStatus === 'waiting_input' || interactiveStatus === 'connecting'
+
   // ── Playback handlers (stable references via useCallback) ────
   const handleRun = useCallback(async () => {
+    if (mode === 'interactive') {
+      if (isInteractiveRunning) {
+        interactiveConsoleRef.current?.stop()
+      } else {
+        interactiveConsoleRef.current?.run()
+      }
+      return
+    }
+
     if (isRunning) return
     // If steps are already loaded and not stale, just resume auto-play
     // instead of re-fetching from the backend.
@@ -301,24 +320,39 @@ export default function VisualizerPage() {
     }
     const s = await fetchSteps(code)
     if (s?.length) setIsRunning(true)
-  }, [isRunning, steps, stale, currentStepIndex, code])
+  }, [mode, isInteractiveRunning, isRunning, steps, stale, currentStepIndex, code])
 
-  const handlePause = useCallback(() => setIsRunning(false), [])
+  const handlePause = useCallback(() => {
+    if (mode === 'interactive') {
+      interactiveConsoleRef.current?.stop()
+    } else {
+      setIsRunning(false)
+    }
+  }, [mode])
 
   // Clamp to valid index range to avoid out-of-bounds access.
-  const handleNext = useCallback(
-    () => setCurrentStepIndex(i => Math.min(i + 1, steps.length - 1)),
-    [steps.length]
-  )
-  const handlePrev = useCallback(
-    () => setCurrentStepIndex(i => Math.max(i - 1, 0)),
-    []
-  )
+  const handleNext = useCallback(() => {
+    if (currentStepIndex < steps.length - 1) {
+      setCurrentStepIndex(i => i + 1)
+    } else if (mode === 'interactive' && !isInteractiveRunning) {
+      interactiveConsoleRef.current?.run()
+    }
+  }, [currentStepIndex, steps.length, mode, isInteractiveRunning])
+
+  const handlePrev = useCallback(() => {
+    if (currentStepIndex > 0) {
+      setCurrentStepIndex(i => Math.max(i - 1, 0))
+    }
+  }, [currentStepIndex])
 
   const handleReset = useCallback(() => {
     setIsRunning(false); setCurrentStepIndex(-1); setSteps([])
     setOutput(''); setError(null); setStale(false)
-  }, [])
+
+    if (mode === 'interactive') {
+      interactiveConsoleRef.current?.restart()
+    }
+  }, [mode])
 
   // ── Save Code — VS Code-style modal workflow ─────────────────
   // Step 1: clicking the toolbar button opens the filename modal
@@ -656,97 +690,91 @@ export default function VisualizerPage() {
               />
             </div>
 
-            {/* ── Visualizer-only toolbar controls ─────────────────── */}
-            {mode === 'visualizer' && (
-              <>
-
-                {/* Stale warning — shown when code was edited after the last run */}
-                {stale && (
-                  <motion.span
-                    className="text-xs text-vs-yellow font-mono ml-2"
-                    initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                  >
-                    ⚠ Code changed — click Run
-                  </motion.span>
-                )}
-
-                {/* ── Playback Controls (right-aligned, icon-only) ─────────────
-                    All execution buttons live here with tooltips for access.
-                ─────────────────────────────────────────────────── */}
-                <div className="ml-auto flex items-center gap-2 shrink-0">
-
-                  {/* Reset / Restart */}
-                  <IconButton onClick={handleReset} variant="danger" title="Restart (Ctrl+R)">
-                    <RotateCcw className="w-4 h-4" />
-                  </IconButton>
-
-                  {/* Step Back */}
-                  <IconButton
-                    onClick={handlePrev}
-                    disabled={atStart || steps.length === 0}
-                    title="Step Back (←)"
-                  >
-                    <SkipBack className="w-4 h-4" />
-                  </IconButton>
-
-                  {/* Run / Pause toggle */}
-                  {isRunning ? (
-                    <IconButton onClick={handlePause} variant="primary" title="Pause (Space)">
-                      <Pause className="w-4 h-4" />
-                    </IconButton>
-                  ) : (
-                    <IconButton onClick={handleRun} disabled={isLoading} variant="primary"
-                      title="Run / Resume (Space)">
-                      {isLoading ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Play className="w-4 h-4 fill-current ml-0.5" />
-                      )}
-                    </IconButton>
-                  )}
-
-                  {/* Next Step */}
-                  <IconButton
-                    onClick={handleNext}
-                    disabled={atEnd || steps.length === 0}
-                    title="Next Step (→)"
-                  >
-                    <SkipForward className="w-4 h-4" />
-                  </IconButton>
-
-                  <div className="w-px h-4 bg-[#2A3446] mx-1" />
-
-                  {/* Compact Speed Controller: [-] 1.0x [+] */}
-                  <div className="flex items-center gap-1.5 shrink-0 bg-[#0B0B0D] border border-[#2A3446] px-2 py-1 rounded-lg">
-                    <span className="text-xs text-gray-400 font-mono select-none">Speed</span>
-                    <button
-                      onClick={handleSpeedDown}
-                      disabled={atMinSpeed}
-                      title="Decrease speed"
-                      className="w-5 h-5 rounded flex items-center justify-center
-                                 text-gray-300 hover:bg-[#1E2638] hover:text-white transition-colors
-                                 disabled:opacity-30 disabled:cursor-not-allowed active:scale-95"
-                    >
-                      <Minus className="w-3.5 h-3.5" />
-                    </button>
-                    <span className="text-xs text-blue-400 font-mono font-semibold w-10 text-center select-none">
-                      {SPEED_LEVELS[speedIndex].label}
-                    </span>
-                    <button
-                      onClick={handleSpeedUp}
-                      disabled={atMaxSpeed}
-                      title="Increase speed"
-                      className="w-5 h-5 rounded flex items-center justify-center
-                                 text-gray-300 hover:bg-[#1E2638] hover:text-white transition-colors
-                                 disabled:opacity-30 disabled:cursor-not-allowed active:scale-95"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-
-                </div>
-              </>
+            {/* Stale warning — shown when code was edited after the last run in visualizer mode */}
+            {mode === 'visualizer' && stale && (
+              <motion.span
+                className="text-xs text-vs-yellow font-mono ml-2"
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+              >
+                ⚠ Code changed — click Run
+              </motion.span>
             )}
+
+            {/* ── Playback Controls (right-aligned, icon-only) ─────────────
+                Unified execution controls shared across both Visualizer and Interactive modes.
+            ─────────────────────────────────────────────────── */}
+            <div className="ml-auto flex items-center gap-2 shrink-0">
+
+              {/* Reset / Restart */}
+              <IconButton onClick={handleReset} variant="danger" title="Restart (Ctrl+R)">
+                <RotateCcw className="w-4 h-4" />
+              </IconButton>
+
+              {/* Step Back */}
+              <IconButton
+                onClick={handlePrev}
+                disabled={mode === 'interactive' ? (currentStepIndex <= 0) : (atStart || steps.length === 0)}
+                title={mode === 'interactive' && currentStepIndex <= 0 ? "Step Back is unavailable during live interactive execution" : "Step Back (←)"}
+              >
+                <SkipBack className="w-4 h-4" />
+              </IconButton>
+
+              {/* Run / Pause toggle */}
+              {(mode === 'interactive' ? isInteractiveRunning : isRunning) ? (
+                <IconButton onClick={handlePause} variant="primary" title="Pause (Space)">
+                  <Pause className="w-4 h-4" />
+                </IconButton>
+              ) : (
+                <IconButton onClick={handleRun} disabled={isLoading || (mode === 'interactive' && interactiveStatus === 'connecting')} variant="primary"
+                  title="Run / Resume (Space)">
+                  {(isLoading || (mode === 'interactive' && interactiveStatus === 'connecting')) ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Play className="w-4 h-4 fill-current ml-0.5" />
+                  )}
+                </IconButton>
+              )}
+
+              {/* Next Step */}
+              <IconButton
+                onClick={handleNext}
+                disabled={mode === 'interactive' ? (currentStepIndex >= steps.length - 1 && isInteractiveRunning) : (atEnd || steps.length === 0)}
+                title="Next Step (→)"
+              >
+                <SkipForward className="w-4 h-4" />
+              </IconButton>
+
+              <div className="w-px h-4 bg-[#2A3446] mx-1" />
+
+              {/* Compact Speed Controller: [-] 1.0x [+] */}
+              <div className="flex items-center gap-1.5 shrink-0 bg-[#0B0B0D] border border-[#2A3446] px-2 py-1 rounded-lg">
+                <span className="text-xs text-gray-400 font-mono select-none">Speed</span>
+                <button
+                  onClick={handleSpeedDown}
+                  disabled={atMinSpeed}
+                  title="Decrease speed"
+                  className="w-5 h-5 rounded flex items-center justify-center
+                             text-gray-300 hover:bg-[#1E2638] hover:text-white transition-colors
+                             disabled:opacity-30 disabled:cursor-not-allowed active:scale-95"
+                >
+                  <Minus className="w-3.5 h-3.5" />
+                </button>
+                <span className="text-xs text-blue-400 font-mono font-semibold w-10 text-center select-none">
+                  {SPEED_LEVELS[speedIndex].label}
+                </span>
+                <button
+                  onClick={handleSpeedUp}
+                  disabled={atMaxSpeed}
+                  title="Increase speed"
+                  className="w-5 h-5 rounded flex items-center justify-center
+                             text-gray-300 hover:bg-[#1E2638] hover:text-white transition-colors
+                             disabled:opacity-30 disabled:cursor-not-allowed active:scale-95"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+            </div>
 
           </div>
         </div>
@@ -882,10 +910,12 @@ export default function VisualizerPage() {
               <Panel defaultSize={35} minSize={20} className="flex flex-col">
                 <div className="glass-panel h-full overflow-hidden">
                   <InteractiveConsole
+                    ref={interactiveConsoleRef}
                     code={code}
                     isActive={mode === 'interactive'}
                     onStep={handleInteractiveStep}
                     onReset={handleInteractiveReset}
+                    onStatusChange={handleInteractiveStatusChange}
                   />
                 </div>
               </Panel>

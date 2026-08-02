@@ -16,7 +16,7 @@
  *   isActive  (boolean) — true when the interactive console mode is selected
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useImperativeHandle, forwardRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 // ── WebSocket URL builder (production-safe) ──────────────────────────────────
@@ -44,7 +44,10 @@ function lineClass(type) {
   }
 }
 
-export default function InteractiveConsole({ code, isActive, onStep, onInputRequest, onReset }) {
+const InteractiveConsole = forwardRef(function InteractiveConsole(
+  { code, isActive, onStep, onInputRequest, onReset, onStatusChange },
+  ref
+) {
   // ── State ──────────────────────────────────────────────────────────────────
   // lines          — array of { id, type, text, prompt, value } for the console display
   // status         — 'idle' | 'connecting' | 'running' | 'waiting_input' | 'done' | 'error'
@@ -276,6 +279,30 @@ export default function InteractiveConsole({ code, isActive, onStep, onInputRequ
     })
   }, [lines])
 
+  // Emit status change to parent page for top toolbar synchronization
+  useEffect(() => {
+    if (onStatusChange) onStatusChange(status)
+  }, [status, onStatusChange])
+
+  // Expose imperative API for parent top toolbar
+  useImperativeHandle(ref, () => ({
+    run: handleRun,
+    stop: handleStop,
+    restart: () => {
+      if (wsRef.current && wsRef.current.readyState <= 1) {
+        wsRef.current.close()
+      }
+      setLines([])
+      setStatus('idle')
+      lineIdRef.current = 0
+      if (onReset) onReset()
+      setTimeout(() => {
+        handleRun()
+      }, 80)
+    },
+    clear: handleClear,
+  }), [handleRun, handleStop, handleClear, onReset])
+
   const isConnected = status === 'running' || status === 'waiting_input'
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -328,28 +355,6 @@ export default function InteractiveConsole({ code, isActive, onStep, onInputRequ
           >
             Clear
           </button>
-
-          {/* Run / Stop toggle */}
-          {isConnected ? (
-            <button
-              onClick={handleStop}
-              className="px-2.5 py-0.5 text-[10px] font-mono font-medium text-red-400
-                         border border-red-800 rounded hover:bg-red-900/30
-                         transition-colors"
-            >
-              ⏹ Stop
-            </button>
-          ) : (
-            <button
-              onClick={handleRun}
-              disabled={status === 'connecting'}
-              className="px-2.5 py-0.5 text-[10px] font-mono font-medium text-white
-                         bg-green-600 border border-green-500 rounded hover:bg-green-500
-                         transition-colors disabled:opacity-50"
-            >
-              ▶ Run
-            </button>
-          )}
         </div>
       </div>
 
@@ -361,7 +366,7 @@ export default function InteractiveConsole({ code, isActive, onStep, onInputRequ
       >
         {lines.length === 0 && status === 'idle' && (
           <div className="text-gray-500 text-xs leading-relaxed">
-            <p>Click <span className="text-green-400 font-semibold">▶ Run</span> to start interactive execution.</p>
+            <p>Click <span className="text-blue-400 font-semibold">▶ Run</span> in the top toolbar to start interactive execution.</p>
             <p className="mt-1">
               Every <code className="text-yellow-400/90">print()</code> output and <code className="text-yellow-400/90">input()</code> prompt streams here in real time.
             </p>
@@ -427,4 +432,6 @@ export default function InteractiveConsole({ code, isActive, onStep, onInputRequ
       </div>
     </div>
   )
-}
+})
+
+export default InteractiveConsole
