@@ -444,7 +444,7 @@ export default function VisualizerPage() {
             Left side  → editor toggle + quick example pills + stale warning
             Right side → playback controls + speed slider
         ────────────────────────────────────────────────────── */}
-        <div className="sticky top-16 z-40 bg-[#111827] border-b border-[#1F2937] px-4 py-2 shrink-0">
+        <div className="sticky top-16 z-40 bg-[#0E131F] border-b border-[#1E2638] px-4 py-2 shrink-0">
           <div className="flex items-center gap-2 flex-wrap min-h-[2.25rem]">
 
             {/* 🛠️ Tools Dropdown — consolidates Editor, Language, Execution, and File actions */}
@@ -456,7 +456,7 @@ export default function VisualizerPage() {
                             font-mono transition-colors duration-150 shrink-0
                             ${toolsOpen
                     ? 'bg-blue-600/15 border-blue-600/40 text-blue-400'
-                    : 'bg-[#0B1120] border-[#374151] text-gray-300 hover:text-white hover:bg-[#1F2937]'}`}
+                    : 'bg-[#0B0B0D] border-[#2A3446] text-gray-300 hover:text-white hover:bg-[#1E2638]'}`}
               >
                 <span>🛠️ Tools</span>
                 <svg
@@ -476,9 +476,9 @@ export default function VisualizerPage() {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 6, scale: 0.98 }}
                     transition={{ duration: 0.12 }}
-                    className="absolute left-0 mt-1.5 w-60 bg-[#111827] border border-[#1F2937]
+                    className="absolute left-0 mt-1.5 w-60 bg-[#0E131F] border border-[#1E2638]
                                rounded-xl shadow-2xl z-50 overflow-hidden font-mono text-xs py-1.5
-                               divide-y divide-[#1F2937]"
+                               divide-y divide-[#1E2638]"
                   >
                     {/* Section 1: Editor */}
                     <div className="px-3 py-1.5">
@@ -566,7 +566,7 @@ export default function VisualizerPage() {
             </div>
 
             {/* Input simulation field — always visible next to Tools */}
-            <div className="w-px h-4 bg-[#374151] shrink-0" />
+            <div className="w-px h-4 bg-[#2A3446] shrink-0" />
             <div className="flex items-center gap-1.5 shrink-0">
               <span className="text-xs text-gray-400 font-mono whitespace-nowrap">⌨ Inputs:</span>
               <input
@@ -575,7 +575,7 @@ export default function VisualizerPage() {
                 onChange={e => setInputValues(e.target.value)}
                 placeholder="e.g. Alice, 25, 3.14"
                 title="Comma-separated values fed to input() calls in order. Example: Alice, 25"
-                className="w-40 px-2 py-0.5 text-xs bg-[#0B1120] border border-[#374151]
+                className="w-40 px-2 py-0.5 text-xs bg-[#0B0B0D] border border-[#2A3446]
                            rounded-md text-gray-300 placeholder-gray-600
                            focus:outline-none focus:border-blue-500 transition-colors font-mono"
               />
@@ -648,8 +648,8 @@ export default function VisualizerPage() {
                       disabled={atMinSpeed}
                       title="Decrease speed"
                       className="inline-flex items-center justify-center w-5 h-5 rounded
-                                 text-xs font-bold text-gray-300 bg-[#0B1120] border border-[#374151]
-                                 hover:bg-[#1F2937] hover:text-white transition-colors
+                                 text-xs font-bold text-gray-300 bg-[#0B0B0D] border border-[#2A3446]
+                                 hover:bg-[#1E2638] hover:text-white transition-colors
                                  disabled:opacity-30 disabled:cursor-not-allowed"
                     >
                       −
@@ -662,8 +662,8 @@ export default function VisualizerPage() {
                       disabled={atMaxSpeed}
                       title="Increase speed"
                       className="inline-flex items-center justify-center w-5 h-5 rounded
-                                 text-xs font-bold text-gray-300 bg-[#0B1120] border border-[#374151]
-                                 hover:bg-[#1F2937] hover:text-white transition-colors
+                                 text-xs font-bold text-gray-300 bg-[#0B0B0D] border border-[#2A3446]
+                                 hover:bg-[#1E2638] hover:text-white transition-colors
                                  disabled:opacity-30 disabled:cursor-not-allowed"
                     >
                       +
@@ -737,7 +737,7 @@ export default function VisualizerPage() {
 
               {/* Memory Visualization — shows variable names, values and change animations */}
               <Panel defaultSize={hSizes.mem} minSize={20} className="flex flex-col">
-                <div className="glass-panel h-full overflow-hidden">
+                <div className="memory-panel h-full overflow-hidden">
                   <MemoryView
                     memory={currentMemory}
                     prevMemory={prevMemory}
@@ -790,7 +790,7 @@ export default function VisualizerPage() {
                   <PanelResizeHandle className="resize-handle-x" />
 
                   <Panel defaultSize={hSizes.mem} minSize={20} className="flex flex-col">
-                    <div className="glass-panel h-full overflow-hidden">
+                    <div className="memory-panel h-full overflow-hidden">
                       <MemoryView
                         memory={currentMemory}
                         prevMemory={prevMemory}
@@ -829,8 +829,8 @@ export default function VisualizerPage() {
                 Animates smoothly as currentStepIndex advances.
             ────────────────────────────────────────────────────── */}
             <div className="px-4 pt-3">
-              <div className="bg-[#111827] border border-[#1F2937] rounded-xl px-4 py-2.5">
-                <div className="flex justify-between text-xs text-gray-500 mb-1.5 font-mono">
+              <div className="bg-[#0E131F] border border-[#1E2638] rounded-xl px-4 py-2.5">
+                <div className="flex justify-between text-xs text-gray-400 mb-1.5 font-mono">
                   <span>Progress</span>
                   <span>
                     {steps.length > 0
@@ -838,7 +838,7 @@ export default function VisualizerPage() {
                       : '— Not running'}
                   </span>
                 </div>
-                <div className="h-1.5 bg-[#1F2937] rounded-full overflow-hidden">
+                <div className="h-1.5 bg-[#161E2E] rounded-full overflow-hidden">
                   <motion.div
                     className="h-full bg-blue-500 rounded-full"
                     animate={{ width: `${progress}%` }}
@@ -855,7 +855,7 @@ export default function VisualizerPage() {
                 is detected (see the useEffect above).
             ────────────────────────────────────────────────────── */}
             <div className="px-4 py-3 pb-12" ref={consoleRef}>
-              <div className="bg-[#111827] border border-[#1F2937] rounded-xl overflow-hidden">
+              <div className="bg-[#0E131F] border border-[#1E2638] rounded-xl overflow-hidden">
 
                 {/* Status header */}
                 <div className="panel-header">
@@ -995,7 +995,7 @@ export default function VisualizerPage() {
             onClick={() => setSaveModalOpen(false)}
           >
             <motion.div
-              className="w-full max-w-sm bg-[#111827] border border-[#1F2937] rounded-xl shadow-2xl overflow-hidden"
+              className="w-full max-w-sm bg-[#0E131F] border border-[#1E2638] rounded-xl shadow-2xl overflow-hidden"
               initial={{ opacity: 0, scale: 0.95, y: 12 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 12 }}
@@ -1003,11 +1003,11 @@ export default function VisualizerPage() {
               onClick={e => e.stopPropagation()}
             >
               {/* Header */}
-              <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#1F2937]">
+              <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#1E2638]">
                 <span className="text-white font-semibold text-sm font-mono">💾 Save Code</span>
                 <button
                   onClick={() => setSaveModalOpen(false)}
-                  className="text-gray-500 hover:text-white text-xs px-2 py-1 rounded hover:bg-[#1F2937] transition-colors"
+                  className="text-gray-500 hover:text-white text-xs px-2 py-1 rounded hover:bg-[#1E2638] transition-colors"
                 >
                   ✕
                 </button>
@@ -1029,12 +1029,12 @@ export default function VisualizerPage() {
                   onKeyDown={e => { if (e.key === 'Enter') handleSaveConfirm() }}
                   placeholder="Untitled"
                   maxLength={100}
-                  className={`w-full px-3 py-2 text-sm bg-[#0B1120] border rounded-lg text-gray-200
+                  className={`w-full px-3 py-2 text-sm bg-[#0B0B0D] border rounded-lg text-gray-200
                               placeholder-gray-600 font-mono transition-colors duration-150
                               focus:outline-none focus:ring-1
                               ${saveError
                       ? 'border-red-600/60 focus:border-red-500 focus:ring-red-500/30'
-                      : 'border-[#374151] focus:border-blue-500 focus:ring-blue-500/30'}`}
+                      : 'border-[#2A3446] focus:border-blue-500 focus:ring-blue-500/30'}`}
                 />
                 {/* Inline validation error */}
                 <AnimatePresence>

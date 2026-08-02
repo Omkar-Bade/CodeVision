@@ -28,7 +28,11 @@ html, body, #root {
 }
 
 body {
-  background-color: #0B1120;
+  background-color: #0B0B0D;
+  background-image: 
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(29, 38, 59, 0.35), rgba(11, 11, 13, 0)),
+    radial-gradient(ellipse 60% 40% at 80% 100%, rgba(22, 32, 51, 0.25), rgba(11, 11, 13, 0));
+  background-attachment: fixed;
   color: #E5E7EB;
   font-family: 'Inter', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -40,16 +44,16 @@ p          { line-height: 1.6; }
 
 /* ── 2. Scrollbar ────────────────────────────────────────────── */
 ::-webkit-scrollbar             { width: 6px; height: 6px; }
-::-webkit-scrollbar-track       { background: #0B1120; }
-::-webkit-scrollbar-thumb       { background: #374151; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #4B5563; }
+::-webkit-scrollbar-track       { background: #0B0B0D; }
+::-webkit-scrollbar-thumb       { background: #242E40; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #374357; }
 
 /* ── 3. Code utilities ───────────────────────────────────────── */
 .font-mono { font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace; }
 
 /* Highlight the currently executing line in ExecutionPanel */
 .line-active {
-  background-color: rgba(59, 130, 246, 0.1);   /* blue-500 at 10% */
+  background-color: rgba(59, 130, 246, 0.15);   /* blue-500 at 15% */
   border-left: 2px solid #3B82F6;
   padding-left: 6px;
 }
@@ -63,41 +67,59 @@ input[type="range"] { accent-color: #3B82F6; }
 
 /* ── 4. Tab bar ──────────────────────────────────────────────── */
 .tab-item {
-  @apply px-4 py-2 text-xs font-mono text-gray-400 border-r border-[#1F2937]
-         hover:text-white hover:bg-[#1a2233] cursor-pointer transition-colors duration-150;
+  @apply px-4 py-2 text-xs font-mono text-gray-400 border-r border-[#1E2638]
+         hover:text-white hover:bg-[#161D2E] cursor-pointer transition-colors duration-150;
 }
 .tab-item.active {
-  @apply text-white bg-[#0B1120] border-t-2 border-t-blue-500;
+  @apply text-white bg-[#0E131F] border-t-2 border-t-blue-500;
 }
 
 /* ── 5. Panel header ─────────────────────────────────────────── */
-/* Shared top-bar used in all three main panels and the console */
+/* Shared top-bar used in main panels and console */
 .panel-header {
-  @apply flex items-center justify-between px-3 py-2
-         bg-[#111827] border-b border-[#1F2937]
-         text-[11px] font-mono text-gray-400 select-none;
+  @apply flex items-center justify-between px-3.5 py-2.5
+         bg-[#131926] border-b border-[#1E2638]
+         text-[11px] font-mono text-gray-300 select-none;
 }
 
 /* ── 6. Panel / card styles ──────────────────────────────────── */
 /*
-  .dev-panel  — primary solid card used for main IDE panels
-  .glass-panel / .glass-soft — kept as aliases for backward compat
-  All three are intentionally identical: solid bg, clean border, no blur.
+  .dev-panel — standard IDE surface for editor & execution panels (#0E131F)
+  .memory-panel — dedicated highlight panel for Memory & Structure (#111827)
 */
 .dev-panel,
 .glass-panel,
 .glass-soft {
-  background-color: #111827;
-  border: 1px solid #1F2937;
+  background-color: #0E131F;
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.015) 0%, rgba(0, 0, 0, 0) 100%);
+  border: 1px solid #1E2638;
   border-radius: 12px;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.5), 0 2px 6px -1px rgba(0, 0, 0, 0.3);
   transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
 }
 .dev-panel:hover,
 .glass-panel:hover,
 .glass-soft:hover {
-  border-color: #374151;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-  transform: translateY(-1px);
+  border-color: #2D3952;
+  box-shadow: 0 6px 24px -2px rgba(0, 0, 0, 0.6);
+}
+
+/* Primary Visual Highlight — Memory & Structure Panel */
+.memory-panel {
+  background-color: #111827;
+  background-image: linear-gradient(180deg, rgba(59, 130, 246, 0.03) 0%, rgba(0, 0, 0, 0) 100%);
+  border: 1px solid #2A3446;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.6), 0 0 20px rgba(59, 130, 246, 0.08);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.memory-panel:hover {
+  border-color: #38465E;
+  box-shadow: 0 10px 28px -4px rgba(0, 0, 0, 0.7), 0 0 24px rgba(59, 130, 246, 0.12);
+}
+.memory-panel .panel-header {
+  background-color: #151E30;
+  border-bottom: 1px solid #2A3446;
 }
 
 /* ── 7. Buttons ──────────────────────────────────────────────── */

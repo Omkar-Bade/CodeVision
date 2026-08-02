@@ -4,20 +4,23 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Professional developer platform palette (LeetCode / GitHub style)
-        'vs-bg':      '#0B1120',   // page background — deep navy
-        'vs-surface': '#111827',   // card / panel background
-        'vs-panel':   '#111827',   // alias for panels
-        'vs-border':  '#1F2937',   // all borders
-        'vs-blue':    '#3B82F6',   // primary accent — blue-500
-        'vs-green':   '#22C55E',   // success / new variable
-        'vs-yellow':  '#EAB308',   // warning / loop variable
-        'vs-orange':  '#F97316',   // string values
-        'vs-purple':  '#8B5CF6',   // special values
-        'vs-red':     '#EF4444',   // error state
-        'vs-text':    '#E5E7EB',   // primary text — gray-200
-        'vs-muted':   '#9CA3AF',   // secondary text — gray-400
-        'vs-number':  '#60A5FA',   // numeric literal color
+        // Professional developer platform palette (GitHub / Linear / VS Code style)
+        'vs-bg':            '#0B0B0D',   // page background — near-black
+        'vs-surface':       '#0E131F',   // standard panel surface
+        'vs-panel':         '#0E131F',   // alias for panels
+        'vs-border':        '#1E2638',   // standard borders
+        'vs-memory-bg':     '#111827',   // memory panel background — navy/blue-gray highlight
+        'vs-memory-card':   '#162033',   // memory variable cards
+        'vs-memory-border': '#2A3446',   // memory panel borders
+        'vs-blue':          '#3B82F6',   // primary accent — blue-500
+        'vs-green':         '#22C55E',   // success / new variable
+        'vs-yellow':        '#EAB308',   // warning / loop variable
+        'vs-orange':        '#F97316',   // string values
+        'vs-purple':        '#8B5CF6',   // special values
+        'vs-red':           '#EF4444',   // error state
+        'vs-text':          '#E5E7EB',   // primary text — gray-200
+        'vs-muted':         '#9CA3AF',   // secondary text — gray-400
+        'vs-number':        '#60A5FA',   // numeric literal color
       },
       fontFamily: {
         // UI text — modern, clean developer font

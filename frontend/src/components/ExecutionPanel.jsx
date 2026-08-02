@@ -90,7 +90,7 @@ function ExecutionPanelInner({ code, steps, currentStepIndex }) {
         {step ? (
           <motion.div
             key={currentStepIndex}
-            className="mx-3 mt-3 rounded-lg p-3 bg-[#0d1117] border border-[#1F2937]"
+            className="mx-3 mt-3 rounded-lg p-3 bg-[#131926] border border-[#1E2638]"
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 8 }}
@@ -102,8 +102,8 @@ function ExecutionPanelInner({ code, steps, currentStepIndex }) {
                   ▶ {EVENT_LABELS[event] ?? 'Executing'} line {step.line}
                 </span>
                 {scope && scope !== 'global' && (
-                  <span className="text-[10px] font-mono text-blue-400 bg-blue-900/20
-                                   border border-blue-700/50 rounded px-1.5 py-0.5">
+                  <span className="text-[10px] font-mono text-blue-400 bg-blue-950/30
+                                   border border-blue-600/50 rounded px-1.5 py-0.5">
                     {scope}()
                   </span>
                 )}
@@ -118,7 +118,7 @@ function ExecutionPanelInner({ code, steps, currentStepIndex }) {
 
             {/* Annotations — type casts, function calls, returns, etc. */}
             {annotations.length > 0 && (
-              <div className="mt-2 pt-2 border-t border-[#1F2937] space-y-1">
+              <div className="mt-2 pt-2 border-t border-[#1E2638] space-y-1">
                 {annotations.map((ann, i) => {
                   const style = ANNOTATION_STYLES[ann.type] ?? DEFAULT_ANN_STYLE
                   return (
@@ -136,7 +136,7 @@ function ExecutionPanelInner({ code, steps, currentStepIndex }) {
             )}
           </motion.div>
         ) : totalSteps === 0 ? (
-          <div className="mx-3 mt-3 text-center py-4 text-gray-500 text-sm">
+          <div className="mx-3 mt-3 text-center py-4 text-gray-400 text-sm font-mono">
             Run your code to see execution steps here.
           </div>
         ) : null}
@@ -158,12 +158,12 @@ function ExecutionPanelInner({ code, steps, currentStepIndex }) {
                 ${active ? 'line-active' : done && !isEmpty ? 'line-done' : ''}`}
             >
               <span className={`select-none text-right w-5 shrink-0 text-xs pt-0.5
-                ${active ? 'text-blue-400' : 'text-gray-600'}`}>
+                ${active ? 'text-blue-400 font-bold' : 'text-gray-500'}`}>
                 {num}
               </span>
 
               <span className={`flex-1 whitespace-pre
-                ${active ? 'text-white' : done && !isEmpty ? 'text-gray-300' : 'text-gray-500'}`}>
+                ${active ? 'text-white font-semibold' : done && !isEmpty ? 'text-gray-200' : 'text-gray-400'}`}>
                 {line || ' '}
               </span>
 
@@ -183,8 +183,8 @@ function ExecutionPanelInner({ code, steps, currentStepIndex }) {
 
       {/* Step breadcrumbs */}
       {totalSteps > 0 && (
-        <div className="border-t border-[#1F2937] px-3 py-2">
-          <div className="text-xs text-gray-500 mb-2 font-mono tracking-widest">
+        <div className="border-t border-[#1E2638] px-3 py-2 bg-[#0E131F]">
+          <div className="text-[10px] text-gray-400 mb-2 font-mono tracking-widest uppercase">
             STEP HISTORY
           </div>
           <div className="flex flex-wrap gap-1">
@@ -195,10 +195,10 @@ function ExecutionPanelInner({ code, steps, currentStepIndex }) {
                 className={`w-6 h-6 rounded text-xs flex items-center justify-center font-mono
                   cursor-default transition-colors
                   ${i < currentStepIndex
-                    ? 'bg-green-500/15 text-green-400'
+                    ? 'bg-green-500/20 text-green-400 border border-green-700/40'
                     : i === currentStepIndex
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-[#1F2937] text-gray-600'}`}
+                      ? 'bg-blue-600 text-white font-bold shadow-sm'
+                      : 'bg-[#161E2E] text-gray-500 border border-[#1E2638]'}`}
               >
                 {s.line}
               </div>

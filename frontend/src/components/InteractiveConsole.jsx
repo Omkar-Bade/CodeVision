@@ -280,10 +280,10 @@ export default function InteractiveConsole({ code, isActive, onStep, onInputRequ
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div className="flex flex-col h-full bg-[#0B1120] rounded-t-xl border border-[#1F2937] overflow-hidden">
+    <div className="flex flex-col h-full bg-[#0E131F] rounded-t-xl border border-[#1E2638] overflow-hidden">
 
       {/* ── Header / Controls ──────────────────────────────────────────────── */}
-      <div className="panel-header flex items-center justify-between px-4 py-2 bg-[#111827] border-b border-[#1F2937]">
+      <div className="panel-header flex items-center justify-between px-4 py-2 bg-[#131926] border-b border-[#1E2638]">
         <div className="flex items-center gap-2">
           <span className="font-mono text-[11px] font-semibold text-gray-300">🖥️ Interactive Console</span>
           {/* Status indicator dot */}
@@ -311,7 +311,7 @@ export default function InteractiveConsole({ code, isActive, onStep, onInputRequ
             disabled={lines.length === 0}
             title="Copy console output"
             className="px-2 py-0.5 text-[10px] font-mono text-gray-400 hover:text-white
-                       border border-[#374151] rounded transition-colors
+                       border border-[#2A3446] rounded transition-colors
                        disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {copied ? '✓ Copied' : '📋 Copy'}
@@ -323,7 +323,7 @@ export default function InteractiveConsole({ code, isActive, onStep, onInputRequ
             disabled={isConnected}
             title="Clear console (Ctrl+L)"
             className="px-2 py-0.5 text-[10px] font-mono text-gray-400 hover:text-white
-                       border border-[#374151] rounded transition-colors
+                       border border-[#2A3446] rounded transition-colors
                        disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Clear
@@ -356,7 +356,7 @@ export default function InteractiveConsole({ code, isActive, onStep, onInputRequ
       {/* ── Terminal output area ───────────────────────────────────────────── */}
       <div
         ref={scrollRef}
-        className="flex-1 overflow-y-auto bg-[#0B1120] px-4 py-3 font-mono text-xs
+        className="flex-1 overflow-y-auto bg-[#0B0B0D] px-4 py-3 font-mono text-xs
                    scrollbar-thin scrollbar-thumb-gray-700 select-text"
       >
         {lines.length === 0 && status === 'idle' && (

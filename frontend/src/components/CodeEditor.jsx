@@ -131,7 +131,7 @@ export default function CodeEditor({ code, onChange, language = 'python' }) {
   return (
     <div className="h-full flex flex-col">
       {/* Tab bar */}
-      <div className="flex items-center border-b border-[#1F2937] bg-[#0d1117] px-3 py-1.5 shrink-0">
+      <div className="flex items-center border-b border-[#1E2638] bg-[#131926] px-3 py-1.5 shrink-0">
         <div className="tab-item active flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-green-500" />
           <span>main.py</span>

@@ -88,20 +88,20 @@ function CallStack({ callStack }) {
               key={`${frame.name}-${i}`}
               className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg border text-xs font-mono
                 ${i === 0
-                  ? 'bg-blue-900/20 border-blue-700/40 text-blue-300'
-                  : 'bg-[#0B1120] border-[#1F2937] text-gray-400'
+                  ? 'bg-blue-900/30 border-blue-600/50 text-blue-300'
+                  : 'bg-[#162033] border-[#2A3446] text-gray-300'
                 }`}
               initial={{ opacity: 0, x: -8 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: i * 0.05 }}
             >
               <div className="flex items-center gap-2">
-                <span className={`text-[10px] ${i === 0 ? 'text-blue-400' : 'text-gray-600'}`}>
+                <span className={`text-[10px] ${i === 0 ? 'text-blue-400' : 'text-gray-500'}`}>
                   {i === 0 ? '▶' : '│'}
                 </span>
-                <span className="font-semibold">{frame.name}()</span>
+                <span className="font-semibold text-gray-200">{frame.name}()</span>
               </div>
-              <span className="text-[10px] text-gray-500">
+              <span className="text-[10px] text-gray-400">
                 {varCount} var{varCount !== 1 ? 's' : ''}
               </span>
             </motion.div>
@@ -131,19 +131,19 @@ const MemoryBox = memo(function MemoryBox({ name, entry, isNew, isChanged }) {
   const typeName   = entry?.type       ?? (Array.isArray(value) ? 'list' : typeof value)
 
   const borderClass = isNew
-    ? 'border-green-700/70'
+    ? 'border-green-500/70 shadow-[0_0_12px_rgba(34,197,94,0.15)]'
     : isChanged
-    ? 'border-blue-600/60'
-    : 'border-[#1F2937]'
+    ? 'border-blue-500/70 shadow-[0_0_12px_rgba(59,130,246,0.15)]'
+    : 'border-[#2A3446]'
 
   const statusBadge = isNew ? (
-    <span className="text-[10px] font-bold text-green-400 bg-green-900/25
-                     border border-green-700/50 rounded px-1.5 py-0.5">
+    <span className="text-[10px] font-bold text-green-400 bg-green-950/40
+                     border border-green-600/50 rounded px-1.5 py-0.5">
       NEW
     </span>
   ) : isChanged ? (
-    <span className="text-[10px] font-bold text-blue-400 bg-blue-900/25
-                     border border-blue-700/50 rounded px-1.5 py-0.5">
+    <span className="text-[10px] font-bold text-blue-400 bg-blue-950/40
+                     border border-blue-600/50 rounded px-1.5 py-0.5">
       UPDATED
     </span>
   ) : null
@@ -155,7 +155,7 @@ const MemoryBox = memo(function MemoryBox({ name, entry, isNew, isChanged }) {
       animate={{ opacity: 1, scale: 1,   y: 0   }}
       exit={{ opacity: 0,   scale: 0.85, y: 8   }}
       transition={{ type: 'spring', stiffness: 320, damping: 28 }}
-      className={`bg-[#111827] border ${borderClass} rounded-xl p-3.5 mb-2.5`}
+      className={`bg-[#162033] border ${borderClass} rounded-xl p-3.5 mb-2.5 shadow-sm`}
     >
       <div className="flex items-center justify-between mb-2.5 gap-2">
         <div className="min-w-[3rem]">{statusBadge}</div>
@@ -192,11 +192,11 @@ const MemoryBox = memo(function MemoryBox({ name, entry, isNew, isChanged }) {
         </motion.span>
       </div>
 
-      <div className="mt-2 pt-2 border-t border-[#1F2937] flex items-center justify-between">
-        <span className="text-[10px] text-gray-600 font-mono">
+      <div className="mt-2.5 pt-2 border-t border-[#2A3446] flex items-center justify-between">
+        <span className="text-[10px] text-gray-400 font-mono">
           addr: 0x{Math.abs(name.split('').reduce((a, c) => a + c.charCodeAt(0), 0xbabe) * 4).toString(16).padStart(4, '0').toUpperCase()}
         </span>
-        <span className="text-[10px] text-gray-600 font-mono">
+        <span className="text-[10px] text-gray-400 font-mono">
           {sizeBytes !== null ? `${sizeBytes} bytes allocated` : ''}
         </span>
       </div>
@@ -209,8 +209,8 @@ const MemoryBox = memo(function MemoryBox({ name, entry, isNew, isChanged }) {
 function MemoryDiagram({ entries }) {
   if (entries.length === 0) return null
   return (
-    <div className="border-t border-[#1F2937] px-3 py-3 shrink-0">
-      <div className="text-[10px] text-gray-500 mb-3 font-mono tracking-widest uppercase">
+    <div className="border-t border-[#2A3446] px-3 py-3 shrink-0 bg-[#111827]">
+      <div className="text-[10px] text-gray-400 mb-3 font-mono tracking-widest uppercase">
         Memory Diagram
       </div>
       <div className="flex gap-4 flex-wrap">
@@ -219,12 +219,12 @@ function MemoryDiagram({ entries }) {
           const typeName = entry?.type  ?? typeof value
           return (
             <div key={name} className="flex flex-col items-center gap-1">
-              <div className="bg-blue-600/15 border border-blue-600/40 rounded
-                              px-3 py-1 text-xs font-mono text-white min-w-12 text-center">
+              <div className="bg-blue-600/20 border border-blue-500/40 rounded
+                              px-3 py-1 text-xs font-mono text-blue-200 min-w-12 text-center">
                 {displayValue(value)}
               </div>
-              <div className="w-px h-3 bg-[#374151]" />
-              <div className="bg-[#0B1120] border border-[#374151] rounded
+              <div className="w-px h-3 bg-[#2A3446]" />
+              <div className="bg-[#162033] border border-[#2A3446] rounded
                               px-2 py-0.5 text-xs font-mono text-yellow-300">
                 {name}
               </div>

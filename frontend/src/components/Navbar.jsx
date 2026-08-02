@@ -47,13 +47,13 @@ export default function Navbar() {
 
   return (
     <nav className="fixed top-0 inset-x-0 z-50 h-16 flex items-center
-                    bg-[#111827] border-b border-[#1F2937]">
+                    bg-[#0E131F]/95 backdrop-blur-md border-b border-[#1E2638]">
       <div className="w-full max-w-screen-xl mx-auto px-5 flex items-center justify-between">
 
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2.5 group">
           <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center
-                          transition-colors duration-150 group-hover:bg-blue-500">
+                          transition-colors duration-150 group-hover:bg-blue-500 shadow-sm">
             <span className="text-white font-bold text-xs font-mono tracking-tight">CV</span>
           </div>
           <span className="font-bold text-base font-mono text-white tracking-tight">
@@ -74,13 +74,13 @@ export default function Navbar() {
             )
           })}
 
-          <div className="flex items-center gap-2 ml-3 pl-3 border-l border-[#1F2937]">
+          <div className="flex items-center gap-2 ml-3 pl-3 border-l border-[#1E2638]">
             {user ? (
               /* ── Logged-in state ── */
               <>
                 {/* Avatar chip */}
                 <div className="flex items-center gap-2 px-2.5 py-1 rounded-lg
-                                bg-[#0B1120] border border-[#374151]">
+                                bg-[#0B0B0D] border border-[#2A3446]">
                   <div className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center
                                   text-white text-[10px] font-bold shrink-0">
                     {initials}
@@ -92,8 +92,8 @@ export default function Navbar() {
 
                 <button
                   onClick={handleSignOut}
-                  className="px-3 py-1.5 text-sm border border-[#374151] text-gray-400
-                             hover:text-white hover:bg-[#1F2937] rounded-lg transition-colors duration-150"
+                  className="px-3 py-1.5 text-sm border border-[#2A3446] text-gray-400
+                             hover:text-white hover:bg-[#1E2638] rounded-lg transition-colors duration-150"
                 >
                   Sign Out
                 </button>
@@ -107,7 +107,7 @@ export default function Navbar() {
                 </Link>
                 <Link to="/register"
                   className="px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-500 text-white rounded-lg
-                             font-medium transition-colors duration-150">
+                             font-medium transition-colors duration-150 shadow-sm">
                   Sign Up
                 </Link>
               </>
